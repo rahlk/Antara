@@ -1,2 +1,6 @@
 pandas
 networkx
+tqdm
+matplotlib
+graphviz
+pydot
