@@ -1,3 +1,0 @@
-allocaCalled:lib/nettle/int/pss*.c
-variableScope:lib/safe-memfuncs.c:42
-variableScope:gl/gettext.h
