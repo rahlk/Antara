@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-MAINTAINER Helpacksi <oo.helpacksi@gmail.com>
+MAINTAINER helpacksi <oo.helpacksi@gmail.com>
 
 #----- Install packages -----
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -37,6 +37,8 @@ ENV PATH=/LLVM_ROOT/bin:/root/.opam/system/bin:$PATH
 ENV LD_LIBRARY_PATH=/LLVM_ROOT/lib
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONIOENCODING=utf8
+ENV COMPILER_ROOT=/workspace/secern/secern-clang-cc/
+ENV PROGRAMS_ROOT=/workspace/secern/programs
 
 CMD ["sh -c bash"]
 
