@@ -36,6 +36,7 @@ RUN wget -O ~/.bashrc https://gist.githubusercontent.com/zachbrowne/8bc414c9f301
 ENV PATH=/LLVM_ROOT/bin:/root/.opam/system/bin:$PATH
 ENV LD_LIBRARY_PATH=/LLVM_ROOT/lib
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONIOENCODING=utf8
 
 CMD ["sh -c bash"]
 
