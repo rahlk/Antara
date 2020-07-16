@@ -36,5 +36,5 @@ projects/sources/*
 projects/sources/*/**    
 
 # Docker container auxiliaries 
-# .devcontainer
-# .devcontainer/devcontainer.json
+.devcontainer
+.devcontainer/devcontainer.json
