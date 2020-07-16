@@ -32,6 +32,9 @@
 *.app
 
 # Projects/binaries
-projects
-projects/*
-projects/**
+projects/sources/*    
+projects/sources/*/**    
+
+# Docker container auxiliaries 
+# .devcontainer
+# .devcontainer/devcontainer.json
