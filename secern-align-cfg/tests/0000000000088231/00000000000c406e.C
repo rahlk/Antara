@@ -1,0 +1,16 @@
+x=int(input())
+for i in range(1,x+1):
+    n=input()
+    z=n.index("4")
+    a=n.replace("4","3")
+    b=n
+    b=b.replace("1","0")
+    b=b.replace("2","0")
+    b=b.replace("3","0")
+    b=b.replace("4","1")
+    b=b.replace("5","0")
+    b=b.replace("6","0")
+    b=b.replace("7","0")
+    b=b.replace("8","0")
+    b=b.replace("9","0")
+    print("Case #{i}: {a} {b}".format(i=i,a=a,b=b))

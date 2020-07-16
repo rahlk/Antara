@@ -1,0 +1,39 @@
+#include<stdio.h>
+int main()
+{
+    int n,k,a,b,p,i,x,q,count;
+    scanf("%d\n",&k);
+    for(i=0;i<k;i++)
+    {
+        scanf("%d",&n);
+        a=n;
+        b=0;
+        do
+        {
+            count=0;
+            p=a;
+            do
+            {
+                q=p%10;
+                p=p/10;
+                if(q==4)
+                {
+                    count++;
+                }
+                if(p==0&&q!=0)
+                {
+                    b=b+(a/2)+1;
+                    a=a/2;
+                }
+                if(p==0&&q==0)
+                {
+                    b=b+(a/2);
+                    a=a/2;
+                }
+            }
+            while(p!=0);
+        }
+        while(count!=0);
+        printf("Case #%d: %d %d",x,a,b);
+    }
+}

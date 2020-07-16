@@ -22,53 +22,24 @@
    Written and maintained by Michal Zalewski <lcamtuf@google.com>
 */
 
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <unistd.h>
-
-// int main(int argc, char** argv) {
-
-//   char buf[8];
-
-//   if (read(0, buf, 8) < 1) {
-//     printf("Hum?\n");
-//     exit(1);
-//   }
-
-//   if (buf[0] == '0')
-//     printf("Looks like a zero to me!\n");
-//   else
-//     printf("A non-zero value? How quaint!\n");
-
-//   exit(0);
-
-// }
-
 #include <stdio.h>
-
-void foo(int i);
-void bar(int i);
-
+#include <stdlib.h>
+#include <unistd.h>
 
 int main(int argc, char** argv) {
-  for (unsigned i = 0; i < 10; ++i) {
-    if (i % argc) 
-      foo(i);
-    else 
-      bar(i);
+
+  char buf[8];
+
+  if (read(0, buf, 8) < 1) {
+    printf("Hum?\n");
+    exit(1);
   }
-  return 0;
+
+  if (buf[0] == '0')
+    printf("Looks like a zero to me!\n");
+  else
+    printf("A non-zero value? How quaint!\n");
+
+  exit(0);
+
 }
-
-void foo(int i) {
-  printf("Blimey!\n");
-}
-
-void bar(int i) {
-  foo(i);
-  if (i > 0) {
-    bar(i - 1);
-  }
-}
-
-

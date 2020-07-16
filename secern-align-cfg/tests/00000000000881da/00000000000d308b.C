@@ -1,0 +1,22 @@
+#include <stdio.h>
+#include <string.h>
+void main(){
+    int t;
+    scanf("%d", &t);
+    int i=0;
+    
+    while(i<t){
+        int n;
+        scanf("%d", &n);
+        fflush(stdin);
+        int len = 2*n-2;
+        char str[len];
+        gets(str);
+        int j =0;
+        while(j<len){
+            if(str[i] == "E")
+                printf("S");
+            else printf("S");
+            j++;}
+        i++;
+    }}

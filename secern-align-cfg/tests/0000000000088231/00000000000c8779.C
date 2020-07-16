@@ -1,0 +1,36 @@
+#include<stdio.h>
+main()
+{
+    int size;
+    long int a,b,i,m,n[100],p,x;
+    scanf("%d",&size);
+    for(i=0;i<size;i++)
+    scanf("%d",&n[i]);
+    for(i=0;i<size;i++)
+    {
+	x=n[i];
+	m=p=0;
+	do{
+		if(x%10==4)
+		{
+			m=10*m+1;
+			p=10*p+3;
+		}
+		else
+		{
+			m=10*m+(x%10);
+			p=10*p;
+		}
+	x/=10;
+	}while(x>0);
+	a=b=0;
+	do{
+		a=10*a+(m%10);
+		b=10*b+(p%10);
+		m/=10;
+		p/=10;
+	}while(m>0||p>0);
+	printf("%d",a);
+	printf("\t%d\n",b);
+    }
+}

@@ -1,0 +1,46 @@
+#include <stdio.h>
+#include <stdlib.h>
+int test(int a,int b)
+{
+    int k,l;
+    while(a!=0 || b!=0)
+    {
+        k=a%10;
+        l=b%10;
+        if(k==4 || l==4)
+        {
+            return -1;
+        }
+        a=(a-k)/10;
+        b=(b-l)/10;
+    }
+    return 0;
+}
+int main()
+{
+    int n;
+	int a,b,i,j,k;
+	printf("entrer votre somme\n");
+	scanf("%d",&n);
+
+	for(i=0;i<=n;i++)
+	{
+	    a=n-i;
+	    b=i;
+		if(test(a,b)==0 )
+		{
+		    break;
+		}
+	}
+	if (b==0)
+    {
+        printf(" voici le montant %d",a);
+    }
+    else
+    {
+        printf(" voici le montant %d %d",a ,b);
+    }
+
+    return 0;
+}
+

@@ -11,4 +11,3 @@ if __name__ == "__main__":
     G = nx.from_pandas_edgelist(grouped, edge_attr=True, create_using=Graphtype)
     nx.draw(G, with_labels=True)
     nx.drawing.nx_pydot.write_dot(G, 'callgraph.dot')
-    plt.savefig('plotgraph.png', dpi=300, bbox_inches='tight')

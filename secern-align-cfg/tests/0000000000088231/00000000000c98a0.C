@@ -1,0 +1,62 @@
+#include<stdio.h>
+int main()
+{
+    int t;
+    long int i,j,k,a,b,flag,flag1;
+    long int n;
+    scanf("%d",&t);
+    for(i=1;i<=t;i++)
+    {
+        
+        flag1=0;
+        j=1;
+        scanf("%ld",&n);
+        while(j)
+        {
+            a=j;
+            flag=0;
+            while(a)
+            {
+                b=a%10;
+                if(b==4)
+                {
+                    flag++;
+                    break;
+                }
+                a=a/10;
+            }
+            
+            if(flag==0)
+            {
+                for(k=n-j;k>0;k--)
+                {
+                     a=k;
+                     flag=0;
+                     while(a)
+                     {
+                         b=a%10;
+                         if(b==4)
+                         {
+                             flag++;
+                             break;
+                         }
+                         a=a/10;
+                     }
+                     if(flag==0)
+                     {
+                         if(j+k==n)
+                         {
+                            printf("Case #%d: %d %d\n",i,j,k);
+                            flag1=1;
+                            break;
+                         }
+                     }
+                }
+                if(flag1==1)
+                    break;
+            }
+            j++;
+        }
+    }
+    return 0;
+}

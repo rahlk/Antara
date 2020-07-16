@@ -1,0 +1,72 @@
+#include<stdio.h>
+#include<math.h>
+int main()
+{
+int t,n,a[100],i,j,N,a1,b[100],k,u=65,c[100],d[100],j1;
+scanf("%d",&t);
+for(i=1;i<=t;i++)
+{
+scanf("%d %d",&N,&n);
+for(j=0;j<n-1;j++)
+{
+scanf("%d ",&a[j]);
+}
+for(j=3;;j=j+2)
+{
+    if(a[0]%j==0)
+    {
+        a1=j;
+       break;
+    }
+}
+for(j1=0;j1<=n;j1++)
+{
+    if(j1==0)
+    {
+      if(a[1]%a1==0)
+      {
+          b[j1]=a[j1]/a1;
+      }
+      else
+        {
+            b[j1]=a1;
+        }
+    }
+    else
+        {
+        b[j1]=a[j1-1]/b[j1-1];
+       }
+    for(j=0;j<=n;j++)
+    {
+        d[j]=b[j];
+    }
+}
+for(j=0;j<=n;j++)
+{
+    for(k=j+1;k<=n;k++)
+    {
+        if(b[k]<b[j])
+        {
+            a1=b[j];
+            b[j]=b[k];
+            b[k]=a1;
+        }
+    }
+    if(j==0)
+    {
+        c[b[j]]=u;
+        u++;
+    }
+    if(j!=0&&b[j]!=b[j-1])
+    {
+        c[b[j]]=u;
+        u++;
+    }
+}
+printf("Case #%d: ",i);
+for(j=0;j<=n;j++)
+{
+   printf("%c",c[d[j]]);
+}
+}
+}

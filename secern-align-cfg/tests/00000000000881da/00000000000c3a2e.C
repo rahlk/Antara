@@ -1,0 +1,10 @@
+t=int(input())
+for i in range(1,t+1):
+    n=int(input())
+    str=input()
+    str=str.replace("S","1")
+    str=str.replace("E","0")
+    str=str.replace("1","E")
+    str=str.replace("0","S")
+    print("Case #{i}: {str}".format(i=i,str=str))
+exit(0)

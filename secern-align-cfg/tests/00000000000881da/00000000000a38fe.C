@@ -1,0 +1,57 @@
+#include<stdio.h>
+int main()
+{
+    int num,l,i,t,c;
+    scanf("%d",&t);
+    for(c=0;c<t;c++){
+    scanf("%d",&num);
+    l=(2*num)-2;
+    char in[l],out[l],search;
+    scanf("%s",&in);
+    if(in[0]=='S')
+    {
+        out[0]='E';
+        search='E';
+    }
+    else
+    {
+        out[0]='S';
+        search='S';
+    }
+    for(i=1;i<l;i++)
+    {
+        if(search==in[i])
+        {
+            if(in[i]=='S')
+            {
+                out[i]='E';
+                if(in[i+1]=='S'){
+                        out[i+1]='E';
+                        search='E';}
+                else{
+                    out[i+1]='S';
+                    search='S';}
+                i++;
+            }
+            else
+            {
+                out[i]='S';
+                if(in[i+1]=='E')
+                {
+                    out[i+1]='S';
+                    search='S';
+                }
+                else
+                {
+                    out[i+1]='E';
+                    search='E';
+                }
+                i++;
+            }
+        }
+        else
+            out[i]=in[i];
+    }
+    printf("Case #%d: %.*s\n",c+1,l,out);
+    }
+}

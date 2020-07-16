@@ -1,0 +1,41 @@
+#include<stdio.h>
+#include<math.h>
+void main()
+{
+ int N[10000],A=0,B=0,X=0,temp=0,t,i,c=1;
+ scanf("%d",&X);
+for(i=1;i<=X;i++)
+ {
+     scanf("%d",&N[i]);
+ }
+ for(i=1;i<=X;i++)
+ {
+  temp=N[i];
+  if(temp<10)
+  {
+   if(temp==4)
+   {
+    A=2;
+    B=2;
+   }
+  }
+  else
+  {
+   c=0;
+   A=N[i];
+   B=0;
+   while(temp!=0)
+   {
+    t=temp%10;
+    if(t==4)
+    {
+     A=A-(pow(10,c));
+     B=B+(pow(10,c));
+    }
+    temp=temp/10;
+    c++;
+   }
+  }
+  printf("Case # %d : %d %d \n",i,A,B);
+ }
+}

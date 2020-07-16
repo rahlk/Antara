@@ -1,0 +1,64 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdbool.h>
+bool solveMazeUtil(int** A, int x, int y, int count,int N,char *sol); 
+
+
+int main(){
+    int i,p,j,k; int n; char c;
+     //int A[N][N] ={0};   //char sol[(N-1)*(N-1)];
+     // A[0][0]=1;
+    scanf("%d\n",&n);
+    for (i=0;i<n;i++){
+        int a =0; int b=0; 
+        scanf("%d\n",&j);
+        char *sol = (char*) malloc (((j-1)*2) *sizeof(char));
+       int **A = (int **)malloc(j * sizeof(int *)); 
+    for (k=0; k<j; i++)
+        A[k] = (int *)malloc(j * sizeof(int)); 
+        A[0][0] =1; 
+        for (k=0;k<j;k++){
+          scanf("%c",&c);
+          if (c=='E') b = b+1;
+          if (c == 'S') a =a+1;
+          A[a][b]=1;
+        }
+        scanf("\n");
+      bool tr=solveMazeUtil(A,0, 0,0,j, sol); 
+     
+       printf("Case #%d: %s\n",i+1,sol);
+       free(sol);
+      for(int i = 0; i < j; i++)
+          free(A[i]);
+    }
+}
+
+bool solveMazeUtil(int** A, int x, int y, int count, int N, char *sol) 
+{ 
+    
+    // if (x,y is goal) return true 
+    if(x == N-1 && y == N-1) 
+    { 
+          return true; 
+    } 
+  
+       if(x >= 0 && x < N && y >= 0 && y < N && A[x][y] == 0) 
+    {    
+        /* Move forward in x direction */
+        if (solveMazeUtil(A, x+1, y,count, N,sol) == true)
+        { sol[count] = 'E'; count++; printf("%d",count);return true; }
+        
+        if (solveMazeUtil(A, x, y+1,count,N,sol) == true) 
+             { sol[count] = 'S'; count++;printf("%d",count);return true;}
+    }
+    
+    if(x >= 0 && x < N && y >= 0 && y < N && A[x][y] == 1) 
+    { 
+        if (solveMazeUtil(A, x+1, y, count,N,sol) == true && A[x+1][y]==0)
+        { sol[count] = 'E'; count++;printf("%d",count);return true;}
+        
+        if (solveMazeUtil(A, x, y+1,count, N,sol) == true && A[x][y+1]==0) 
+             { sol[count] = 'S';count++;printf("%d",count); return true;}
+    }
+    return false; 
+} 

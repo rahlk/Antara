@@ -1,0 +1,27 @@
+#include<stdio.h>
+#include<string.h>
+int main(){
+    char s[100];
+    int n,t,i=0,c=0;
+    scanf("%d",&t);
+    scanf("%d",&n);
+    gets(s);
+    while(s[i]!='\0')
+    {
+        if(s[i]=='S')
+        {
+            s[i]='E';
+        }
+        else if(s[i]=='E')
+        {
+            s[i]='S';
+        }
+        i++;
+    }
+    
+    while(s[c]!='\0'){
+        
+    printf("Case #1: %c",s[c]);
+    c++;
+    }
+}

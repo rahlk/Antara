@@ -1,0 +1,41 @@
+#include <stdio.h>
+
+main(){
+	
+	int n,size,i,l,j=0,k;
+	char str[100],path[200],len[100];
+    
+    scanf("%d",&n);
+    
+    for(i=1;i<=n;i++) {
+    	
+    	scanf("%d",&size);
+    	
+    	scanf("%s",&str);
+    	
+    	len[n] = (2*size)-2;
+    	
+    	for(k=0;k<len[n];k++,j++) {
+    		
+    		if(str[k] == 'S')
+    			path[j] = 'E';
+    		else
+    			path[j] = 'S';
+		}
+	}
+	
+	l = 0;
+	j = 0;
+	
+	for(i=1;i<=n;i++){
+		
+		printf("Case #%d: ",i);
+		
+		l = l + len[i];
+		
+		for(k=0;k<=l;k++,j++)
+			printf("%c",path[j]);	
+		
+		printf("\n");
+	}	
+}

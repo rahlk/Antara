@@ -1,0 +1,22 @@
+#include <stdio.h>
+
+int main() {
+   int cases;
+   scanf("%d", cases);
+   for(int n = 1; n <= cases; n++) {
+        int to_print;
+        scanf("%d", to_print);
+        printf("Case #%d: ", n);
+        for(int i = 0; i < to_print; n++) {
+            char c;
+            c = getchar();
+            if(c == 'E') {
+                printf("S");
+            } else {
+                printf("E");
+            }
+        }
+        print("\n");
+       
+   }
+}

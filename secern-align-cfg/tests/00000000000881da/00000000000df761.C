@@ -1,0 +1,35 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+
+void functie(char s[]){
+    
+    for(int i=0; i<strlen(s); i++)
+    {
+        if(s[i]=='E')
+            printf("%c", 'S');
+        else if(s[i]=='S')
+            printf("%c", 'E');
+    }
+}
+
+
+int main()
+{
+    FILE* f=fopen("data.txt", "r");
+    int T, i=0;
+    fscanf(f, "%d", &T);
+    while(i<T){
+
+        int dim;
+        char* s=calloc(5000,1);
+        fscanf(f, "%d %s", &dim, s);
+        printf("Case #%d: ", i+1);
+        functie(s);
+        free(s);
+        printf("\n");
+        i++;
+    }
+
+    return 0;
+}

@@ -1,0 +1,33 @@
+#include<stdio.h>
+#include<stdlib.h>
+
+int main()
+{
+    long int T,N,M;
+    scanf("%ld",&T);
+    int res[2*T];
+    for(int i=0;i<2*T;i=i+2)
+    {
+        N=0;
+        M=0;
+        int mult=1;
+        scanf("%ld",&N);
+        long int R=N;
+        while(R>=4)
+        {
+            if(R%10==4)
+            {
+                R=R-1;
+                M=M+mult;
+            }
+            R=R/10;
+            mult=mult*10;
+        }
+        res[i]=M;
+        res[i+1]=N-M;
+    }
+    for(int i=0;i<2*T;i=i+2)
+    {
+        printf("Case #%ld: %ld %ld\n",i+1,res[i],res[i+1]);
+    }
+}

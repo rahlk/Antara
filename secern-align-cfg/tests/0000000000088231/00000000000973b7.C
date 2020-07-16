@@ -1,0 +1,39 @@
+ #include<stdio.h>
+void main()
+{
+    int t,x[100],i,c,d,f=1,j=0;
+    scanf("%d",&t);
+    for(i=0;i<t;i++)
+        scanf("%d",&x[i]);
+    while(j<t)
+    {
+        for(i=1;i<x[j];i++)
+        {
+        	f=0;
+            c=i;
+            d=x[j]-i;
+            while(c!=0)
+            {
+                if(c%10==4)
+                {
+                    f=1;
+                    break;
+                }
+                c/=10;
+            }
+            while(d!=0)
+            {
+                if(d%10==4)
+                {
+                    f=1;
+                    break;
+                }
+                d/=10;
+            }
+            if(f==0)
+                break;
+        }
+        printf("Case #%d: %d %d\n",j+1,i,x[j]-i);
+        j++;
+    }
+}

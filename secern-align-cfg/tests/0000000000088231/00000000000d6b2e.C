@@ -1,0 +1,1 @@
+ var number = prompt("Please number","");

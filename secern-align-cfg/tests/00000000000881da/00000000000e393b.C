@@ -1,0 +1,77 @@
+#include<string.h>
+#include<stdio.h>
+void main()
+{
+    char P[2000],my[2000];
+    int T,i,N,flag=0,change=0,j,len,rl,rm,cm,cl;
+    rl=rm=cl=cm=0;
+    scanf("%d",&T);
+    for(i=0;i<T;i++)
+    {
+	scanf("%d",&N);
+	fflush(stdin);
+	gets(P);
+	len=strlen(P);
+	if(len!=(2*N-2))
+        {
+            continue;
+        }
+	if(P[0]=='S')
+        {
+            rl++;
+            cm++;
+            my[0]='E';
+            my[1]='S';
+            rm++;
+	}
+        else
+        {
+	    rm++;
+	    cl++;
+	    cm++;
+	    my[0]='S';
+	    my[1]='E';
+	}
+	if(P[1]=='E')
+	cl++;
+	else
+	rl++;
+	for(j=2;j<len;j++)
+	{
+	    my[j]=my[j-1];
+	    if(change==1)
+	    {
+		if(my[j]=='S')
+		{
+		    my[j]='E';
+		    cm++;
+		}
+		else
+		{
+		    rm++;
+		    my[j]='S';
+		}
+		change=0;
+	    }
+	    if(flag==1)
+	    {
+		change=1;
+		flag=0;
+	    }
+	    if(my[j]=='S')
+	    rm++;
+	    else
+	    cm++;
+	    if(P[j]=='S')
+	    rl++;
+	    else
+	    cl++;
+	    if((rm==rl)&&(cl==cm))
+	    {
+	     flag=1;
+	    }
+	}
+	printf("Case #%d: %s\n",i+1,my);
+    }
+    exit(0);
+}

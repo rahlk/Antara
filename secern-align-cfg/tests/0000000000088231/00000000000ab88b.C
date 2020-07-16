@@ -1,0 +1,43 @@
+#include<stdio.h>
+
+int* calculate(int n,int *res)
+{
+	int num=n,res1=0,res2=0,fact=1;
+	while(num>0)
+	{
+		if(num%10==4)
+		{
+			res1=3*fact+res1;
+			res2=1*fact+res2;
+		}
+		else
+		{
+			res1=(num%10)*fact+res1;
+		}
+		fact=fact*10;
+		num/=10;
+		printf("%d %d\n",res1,res2);
+	}
+	res[0]=res1; res[1]=res2;
+	return res; 
+}
+
+void main()
+{
+	int t;
+	int res[2];
+	scanf("%d",&t);
+	int ar[t];
+	for(int i=0;i<t;i++)
+	{
+		scanf("%d",&ar[i]);
+	}
+    int *resa;
+	for(int i=1;i<=t;i++)
+	{
+		resa=calculate(ar[i-1],res);
+		printf("Case #%d: ",i);
+		printf("%d %d\n",resa[0],resa[1]);
+	}
+}
+

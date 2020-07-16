@@ -1,0 +1,63 @@
+#include<stdio.h>
+main()
+{
+    int t,m=1;
+    scanf("%d",&t);
+    while(m<=t)
+    {
+        int n,l,i;
+        scanf("%d%d",&n,&l);
+        int a[l],f,s=0,b[l+1];
+        for(i=0;i<l;i++)
+            scanf("%d",&a[i]);
+        for(i=3;i*i<=a[0];i++)
+            if(a[0]%i==0)
+            {
+                f=i;
+                break;
+            }
+        if(a[1]%f==0)
+        {
+            b[0]=a[0]/f;
+            b[1]=f;
+        }
+        else
+        {
+            b[1]=a[0]/f;
+            b[0]=f;
+        }
+        for(i=2;i<l;i++)
+            b[i]=a[i-1]/b[i-1];
+        b[i]=a[l]/b[i-1];
+        int c[26],j,u;
+        for(i=0;i<l+1;i++)
+        {
+            u=0;
+            for(j=0;j<s;j++)
+                if(c[j]==b[i])
+                    u=1;
+            if(u==1)
+                continue;
+            c[s]=b[i];
+            s++;
+        }
+        for(i=0;i<26;i++)
+            for(j=i+1;j<26;j++)
+                if(c[i]>c[j])
+                {
+                    f=c[i];
+                    c[i]=c[j];
+                    c[j]=f;
+                }
+        printf("Case #%d: ",m);
+        for(i=0;i<l;i++)
+            for(j=0;j<26;j++)
+                if(b[i]==c[j])
+                {
+                    printf("%c",j+65);
+                    break;
+                }
+        printf("\n");
+        m++;
+    }
+}

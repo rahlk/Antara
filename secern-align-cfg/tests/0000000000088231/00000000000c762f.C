@@ -1,0 +1,60 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+main()
+{
+   int T,*N,n1,n2,a,b,A,B,i,k,s;
+   scanf("%d",&T);
+   N=(int *)malloc(T*sizeof(int));
+   for(i=0;i<T;i++)
+   scanf("%d",&N[i]);
+   for(i=0;i<T;i++)
+   {
+   	int count=0;
+   	A=N[i];
+   	k=N[i];
+   	while(k>0)
+   	{
+   	   s=k%10;
+	   if(s==4)
+	   A=A-3*pow(10,count);
+	   count++;
+	   k=k/10;	
+	}
+       B=N[i]-A;
+       a=A;
+       b=B;
+       while(A!=B)
+       {
+           int count1=0,count2=0;
+       while(a>0)
+       {
+          n1=a%10;
+          if(n1==4)
+          count1++;
+          if(count1==1)
+          break;
+          a=a/10;
+       }
+       while(b>0)
+       {
+          n2=b%10;
+          if(n2==4)
+          count2++;
+          if(count2==1)
+          break;
+          b=b/10;
+       }
+       if((count1==0)&&(count2==0))
+       {
+       printf("Case #%d: %d %d\n",i,A,B);
+       break;
+       }
+       else
+       {
+       	A++;
+       	B--;
+	   }
+   }
+}
+}

@@ -1,0 +1,155 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+unsigned int find_primes(unsigned int **dparr, unsigned int pnum)
+{
+    unsigned int *parr = *dparr;
+    unsigned int num_p = 1;
+    
+    //Only Even Prime
+    parr[num_p-1] = 2;
+    
+	//Start Prime Search from 3
+	unsigned int unt_p = 3;
+    while(unt_p<=pnum)
+    {
+        unsigned int i;
+        unsigned int p_num = 1;
+        for(i=2; i<=(unt_p/2); i++)
+        {
+            if(unt_p%i==0)
+            {
+                //Clear Flag if Divisible
+                p_num = 0;
+            }
+        }
+        
+        //Prime if Flag is Set
+        if(p_num)
+        {
+            //Create Space and Enter Prime
+            num_p++;
+            parr = (unsigned int*)realloc(parr, sizeof(unsigned int)*num_p);
+            parr[num_p-1] = unt_p;
+        }
+        unt_p++;
+    }
+
+    //Re-Assign Pointer
+    *dparr = parr;
+    
+    return num_p;
+}
+
+void find_a(unsigned int *pr_arr, unsigned int *ctxt, unsigned int nump, unsigned int numa, unsigned int case_n)
+{
+    unsigned int i, j, k;
+    unsigned int found_prime;
+    
+    unsigned int first_let[2] = {0, 0};
+    unsigned int temp_ind = 0;
+    
+    unsigned int *bitm = (unsigned int*)malloc(sizeof(unsigned int)*26);
+    
+    for(i=0; i<26; i++)
+    {
+        bitm[i] = 0;
+    }
+    
+    i = 0;
+    unsigned int aind = 0;
+    for(k=0; k<26; k++)
+    {
+        for(i=aind; i<nump; i++)
+        {
+            found_prime = 0;
+            for(j=0; j<numa; j++)
+            {
+                if(ctxt[j]%pr_arr[i]==0)
+                {
+                    found_prime = 1;
+                    bitm[k] = i;
+                    if(j==0)
+                    {
+                        first_let[temp_ind] = k;
+                        temp_ind++;
+                    }
+                    break;
+                }
+            }
+            if(found_prime==1)
+            {
+                break;
+            }
+        }
+        aind = i+1;
+    }
+    
+    unsigned int which_sec = first_let[0];
+    unsigned int which_first = first_let[1];
+    
+    if(ctxt[1]%pr_arr[bitm[first_let[1]]]==0)
+    {
+        which_sec = first_let[1];
+        which_first = first_let[0];
+    }
+    
+    unsigned int rem_val;
+    printf("Case #%u: %c", case_n, (char)(which_first+'A'));
+    for(i=0; i<numa; i++)
+    {
+        rem_val = ctxt[i]/pr_arr[bitm[which_first]];
+        for(j=0; j<26; j++)
+        {
+            if(rem_val==pr_arr[bitm[j]])
+            {
+                printf("%c", 'A'+j);
+                which_first = j;
+                break;
+            }
+        }
+    }
+    
+    printf("\n");
+    free(bitm);
+}
+
+int main()
+{
+    //Get Number of Sentences
+	unsigned int n;
+	scanf("%u", &n);
+    
+    unsigned int i;
+    unsigned int pr_range, num_char;
+    unsigned int *ctxt_arr;
+    unsigned int *prime_arr;
+    unsigned int numprime;
+    
+    for(i=0; i<n; i++)
+    {
+        //Get Prime Number Range and Number of Characters - 1
+        scanf("%u %u", &pr_range, &num_char);
+        
+        //Get Text
+        //printf("\n");
+        unsigned int j;
+        ctxt_arr = (unsigned int*)malloc(sizeof(unsigned int)*num_char);
+        for(j=0; j<num_char; j++)
+        {
+            scanf("%u", ctxt_arr+j);
+        }
+        
+        //Find Primes in Range
+        prime_arr = (unsigned int*)malloc(sizeof(unsigned int));
+        numprime = find_primes(&prime_arr, pr_range);
+
+        find_a(prime_arr, ctxt_arr, numprime, num_char, i+1);
+
+        free(prime_arr);
+        free(ctxt_arr);
+    }
+    
+    return 0;
+}

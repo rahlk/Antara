@@ -1,0 +1,44 @@
+#include <stdio.h>
+
+int main() {
+	int  T = 0,Num,E,S;
+	char Ly[100000];
+	char Me[100000];
+	scanf("%d", &T);
+	
+	for (int a = 1; a <= T; a++)
+	{
+		Num = 0;
+		E = 0;
+		S = 0;
+		for (int i = 0; i < 100000; i++)
+		{
+			Ly[a] = NULL;
+			Me[a] = NULL;
+		}
+
+		getchar();
+		scanf("%d", &Num);
+
+		getchar();
+		scanf("%s", &Ly);
+		for (int j = 0; j < 2*Num-2;j++)
+		{
+			if (Ly[j] == 'E')
+				E++;
+			if (Ly[j] == 'S')
+				S++;
+			if (E > S)
+				Me[j] = 'S';
+			else if (E == S && Ly[j + 1] == 'E')
+				Me[j] = 'S';
+			else if (E == S && Ly[j + 1] == 'S')
+				Me[j] = 'E';
+			else
+				Me[j] = 'E';
+			printf("%c", Me[j]);
+		}
+		printf("\n");
+	}
+	return 0;
+}

@@ -1,0 +1,10 @@
+#include<stdio.h>
+int main(){
+int t,r,c;
+scanf("%d\n",&t);
+scanf("%d %d",&r,&c);
+if(r==c&&r<c){
+printf("IMPOSSIBLE");}
+else
+printf("POSSIBLE");
+}

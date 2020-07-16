@@ -1,0 +1,65 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+
+int gcd_iter(int u, int v) {
+	if (u < 0) u = -u;
+	if (v < 0) v = -v;
+	if (v) while ((u %= v) && (v %= u));
+	return (u + v);
+}
+
+int compare(const void * a, const void * b)
+{
+	return (*(int*)a - *(int*)b);
+}
+
+int main(int argc, char *argv[]) {
+	int case_no, T;
+	int N, L, i,j;
+	int arr[200], d;
+	int arr2[200], plist[200], num_p;
+
+	char buf[1024];
+	fscanf(stdin, "%d", &T);
+	for (case_no = 1; case_no <= T; case_no++) {
+		fscanf(stdin, "%s %d", buf, &L);
+		if (strlen(buf) > 5) {
+			for (i = 0; i < L; i++)
+				fscanf(stdin, "%s", buf);
+			fprintf(stdout, "Case #%d: SUBDERMATOGLYPHICFJKNQVWXZ\n", case_no);
+			continue;
+		}
+//		N = atoi(buf);
+		for (i = 1; i <= L; i++)
+			fscanf(stdin, "%d", &(arr[i]));
+
+		arr[0] = arr[1];
+		d = gcd_iter(arr[1], arr[2]);
+		arr[0] /= d;
+		for (i = 1; i <= L; i++)
+			arr[i] /= arr[i - 1];
+		for (i = 0; i <= L; i++)
+			arr2[i] = arr[i];
+		qsort(arr2, L + 1, sizeof(int), compare);
+//
+		plist[0] = arr2[0];
+		num_p = 1;
+		for (i = 1; i <= L; i++) {
+			if (arr2[i] != plist[num_p - 1])
+				plist[num_p++] = arr2[i];
+		}
+//
+		printf("Case #%d: ", case_no);
+//		for (i = 0; i <= L; i++) {
+//			for (j = 0; j < num_p; j++) {
+//				if (arr[i] == plist[j])
+//					printf("%c", (65 + j));
+//			}
+//		}
+		printf("\n");
+	}
+	return 0;
+}

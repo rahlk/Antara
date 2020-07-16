@@ -1,0 +1,57 @@
+#include<stdio.h>
+#include<stdbool.h>
+#define N 5
+bool solvemazeUtil(int maze[N][N],int x,int y,int sol[N] [N]);
+void printsolution(int sol[N][N])
+{
+for(int i=0;i<N;i++)
+{
+for(int j=0;j<N;j++)
+printf("%d",sol[i][j]);
+printf("\n");
+}
+}
+bool issafe(int maze[N][N],int x,int y)
+{
+if(x>=0 && x<N && y>=0 && y<N && maze[x][y]==1)
+return true;
+return false;
+}
+bool solvemaze(int maze[N][N])
+{
+int sol[N][N]={{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0,}};
+if(solvemazeUtil(maze,0,0,0,sol)==false)
+{
+    printf("solution does not exist");
+    return false;
+}
+print(sol);
+return true;
+}
+bool solvemazeUtil(int maze[N][N],int x,int y,int sol[N][N])
+{
+    if(x==N-1 && y==N-1)
+    {
+        sol[x][y]=1;
+        return true;
+    }
+    if(isSafe(maze,x,y)==true)
+    {
+        sol[x][y]=1;
+        if(solvemazeUtil(maze,x+1,y,sol)==true)
+        return true;
+        if(solvemazeUtil(maze,x,y+1sol)==true)
+        return true;
+        sol[x][y]=0;
+        return false;
+    }
+    return false;
+    int main()
+    int maze[N][N]={{1,1,1,0,0},{1,1,1,1,0},{0,0,1,1,0},{0,0,1,1,1},{0,0,0,1,1}};
+    solvemaze(maze);
+    return 0;
+}
+}
+    
+    
+
