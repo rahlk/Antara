@@ -1,25 +1,18 @@
 /*
-  Copyright 2013 Google LLC All rights reserved.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at:
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
-
-/*
    american fuzzy lop - vaguely configurable bits
    ----------------------------------------------
 
    Written and maintained by Michal Zalewski <lcamtuf@google.com>
-*/
+
+   Copyright 2013, 2014, 2015, 2016 Google Inc. All rights reserved.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at:
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ */
 
 #ifndef _HAVE_CONFIG_H
 #define _HAVE_CONFIG_H
@@ -28,7 +21,7 @@
 
 /* Version string: */
 
-#define VERSION             "2.57b"
+#define VERSION             "2.52b"
 
 /******************************************************
  *                                                    *
@@ -54,18 +47,13 @@
 
 #define EXEC_TM_ROUND       20
 
-/* 64bit arch MACRO */
-#if (defined (__x86_64__) || defined (__arm64__) || defined (__aarch64__))
-#define WORD_SIZE_64 1
-#endif
-
 /* Default memory limit for child process (MB): */
 
-#ifndef WORD_SIZE_64
+#ifndef __x86_64__ 
 #  define MEM_LIMIT         25
 #else
 #  define MEM_LIMIT         50
-#endif /* ^!WORD_SIZE_64 */
+#endif /* ^!__x86_64__ */
 
 /* Default memory limit when running in QEMU mode (MB): */
 
