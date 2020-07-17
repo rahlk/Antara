@@ -38,3 +38,9 @@ projects/sources/*/**
 # Docker container auxiliaries 
 .devcontainer
 .devcontainer/devcontainer.json
+
+# .DS_Store 
+# export WS_ROOT=/workspace/secern/
+# export ELF_BIN=/workspace/secern/projects/elf/binutils/bin
+# export ELF_TEST_IN=/workspace/secern/projects/elf/test_in
+# export CFG_ALIGN=/workspace/secern/secern-cfg-align
