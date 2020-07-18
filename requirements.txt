@@ -1,6 +1,8 @@
+tqdm
+pydot
 pandas
 networkx
-tqdm
-matplotlib
 graphviz
-pydot
+pydotplus
+matplotlib
+scikit-learn
