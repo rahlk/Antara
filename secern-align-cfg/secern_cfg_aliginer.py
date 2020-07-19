@@ -90,7 +90,7 @@ if __name__ == "__main__":
     H = H / np.sum(np.sum(H))
     H = sp.sparse.coo_matrix(H)
 
-    for _ in tqdm(range(100), desc="Computing CFG similarity..."):
+    for _ in tqdm(range(20), desc="Computing CFG similarity..."):
         final = FINAL(A1, A2, H, N1, N2, E1, E2)
         sim_matrix = final.main_proc().tocoo()
         H = sim_matrix
@@ -106,12 +106,24 @@ if __name__ == "__main__":
     sim_matrix = sim_matrix.A
 
     # Normalize weights using min/max normalization
-    for i, row in enumerate(sim_matrix):
-        lo = min(row)
-        hi = max(row)
-        sim_matrix[i] = (sim_matrix[i] - lo) / (hi - lo)
+    # for i, col in enumerate(sim_matrix.T):
+    #     lo = min(col)
+    #     hi = max(col)
+    #     sim_matrix[i] = (sim_matrix.T[i] - lo) / (hi - lo)
     
-    set_trace()
+    # Normalize weights using min/max normalization
+    lo = sim_matrix.min()
+    hi = sim_matrix.max()
+    sim_matrix = (sim_matrix - lo) / (hi - lo)
+    
+    get_readelf_label = lambda i: tuple(readelf_nodes)[i]
+
+    for i, row in enumerate(sim_matrix):
+        top_matches = np.argsort(row)[::-1]
+        top_five = top_matches[:5]
+        objdump_nodes = tuple(objdump_nodes)
+        readelf_nodes = tuple(readelf_nodes)
+        print(objdump_nodes[i], "-->", " ".join(map(get_readelf_label, top_five)))
 
     # Plot as heatmap
     draw_heatmap(sim_matrix, row_labels, col_labels, save_name='Readelf <-> Objdump.pdf')
