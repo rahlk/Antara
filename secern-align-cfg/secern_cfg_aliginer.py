@@ -89,7 +89,7 @@ if __name__ == "__main__":
         sim_matrix = final.main_proc().tocoo()
         H = sim_matrix
 
-    if n1 == sim_matrix.shape[0]:
+    if n1 == sim_matrix.shape[1]:
         row_labels = readelf_nodes
         col_labels = objdump_nodes
     else:
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         hi = max(row)
         sim_matrix[i] = (sim_matrix[i] - lo) / (hi - lo)
     
-    print(sim_matrix)
+    set_trace()
 
     # Plot as heatmap
     draw_heatmap(sim_matrix, row_labels, col_labels, save_name='Readelf <-> Objdump.pdf')
