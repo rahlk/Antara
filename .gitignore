@@ -42,6 +42,11 @@ projects/sources/*/**
 # DS_Store
 .DS_Store 
 
+# VS Code
+.vscode
+.vscode/*
+.vscode/*/**
+
 # export WS_ROOT=/workspace/secern/
 # export ELF_BIN=/workspace/secern/projects/elf/binutils/bin
 # export ELF_TEST_IN=/workspace/secern/projects/elf/test_in
