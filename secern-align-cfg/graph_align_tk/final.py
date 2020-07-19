@@ -56,7 +56,7 @@ class FINAL(object):
     [1] Zhang, Si, and Hanghang Tong. "FINAL: Fast Attributed Network Alignment." Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. ACM, 2016.
     """
 
-    def __init__(self, A1, A2, H, N1=None, N2=None, E1=None, E2=None, alpha=0.01, maxiter=100, tol=1e-9):
+    def __init__(self, A1, A2, H, N1=None, N2=None, E1=None, E2=None, alpha=0.5, maxiter=100, tol=1e-9):
         if not sp.isspmatrix_coo(A1):
             A1 = A1.tocoo()
         if not sp.isspmatrix_coo(A2):

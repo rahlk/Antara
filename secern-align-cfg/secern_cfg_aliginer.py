@@ -26,7 +26,7 @@ if py_path not in sys.path:
 def draw_heatmap(sim_matrix, row_labels, col_labels, save_name="foo.pdf"):
     fig, ax = plt.subplots()
     im, cbar = heatmap(sim_matrix, col_labels, row_labels, ax=ax, cmap="YlGn", cbarlabel="Similarity Score")
-    texts = annotate_heatmap(im, valfmt="{x:.1f} t")
+    # texts = annotate_heatmap(im, valfmt="{x:.1f} t")
     fig.tight_layout()
     fig.savefig(save_name, bbox_inches='tight')
 
@@ -42,6 +42,7 @@ if __name__ == "__main__":
     readelf_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
     with CFGBuilder(readelf_bin_path, test_input_path) as readelf_builder:
         readelf_cfg = readelf_builder.get_dynamic_call_graph(opt_flags='--all')
+        readelf_builder.draw_call_graph(readelf_cfg, fname="readelf.dot")
         _, readelf_adj = readelf_builder.graph_to_adjacency_matrix(readelf_cfg, use_weights=False)
         readelf_nodes, readelf_edge_attr = readelf_builder.graph_to_adjacency_matrix(readelf_cfg, use_weights=False)
     
@@ -49,6 +50,7 @@ if __name__ == "__main__":
     objdump_bin_path = Path(root.joinpath('projects/elf/binutils/bin/objdump'))
     with CFGBuilder(objdump_bin_path, test_input_path) as objdump_builder:
         objdump_cfg = objdump_builder.get_dynamic_call_graph(opt_flags='-s')
+        objdump_builder.draw_call_graph(objdump_cfg, fname="objdump.dot")
         _, objdump_adj = objdump_builder.graph_to_adjacency_matrix(objdump_cfg, use_weights=False)
         objdump_nodes, objdump_edge_attr = objdump_builder.graph_to_adjacency_matrix(objdump_cfg, use_weights=False)
     
@@ -76,12 +78,16 @@ if __name__ == "__main__":
     E2.append(objdump_edge_attr)
 
     # Previous similarity matrix (initialize with equal weights)
-    weight = (n1 * n2) ** -1
-    H = sp.sparse.coo_matrix(np.ones((n2, n1)) * weight)
+    # weight = (n1 * n2) ** -1
+    H = np.random.random(((n2, n1)))
+    # H = np.ones((n2, n1))
+    H = H / np.sum(np.sum(H))
+    H = sp.sparse.coo_matrix(H)
 
-    final = FINAL(A1, A2, H, N1, N2, E1, E2)
-
-    sim_matrix = final.main_proc()
+    for _ in range(100):
+        final = FINAL(A1, A2, H, N1, N2, E1, E2)
+        sim_matrix = final.main_proc().tocoo()
+        H = sim_matrix
 
     if n1 == sim_matrix.shape[0]:
         row_labels = readelf_nodes
@@ -91,9 +97,17 @@ if __name__ == "__main__":
         row_labels = objdump_nodes
     
     # Convert to a numpy.ndarray
-    sim_matrix = sim_matrix.toarray()
+    sim_matrix = sim_matrix.A
+
+    # Normalize weights using min/max normalization
+    for i, row in enumerate(sim_matrix):
+        lo = min(row)
+        hi = max(row)
+        sim_matrix[i] = (sim_matrix[i] - lo) / (hi - lo)
+    
+    print(sim_matrix)
 
     # Plot as heatmap
-    draw_heatmap(sim_matrix, row_labels, col_labels, save_name='Readelf <-> Objdump')
+    draw_heatmap(sim_matrix, row_labels, col_labels, save_name='Readelf <-> Objdump.pdf')
 
-    set_trace()
+

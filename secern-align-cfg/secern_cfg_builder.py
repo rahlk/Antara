@@ -40,10 +40,7 @@ class CFGBuilder:
         fname: str
             File name to save as
         """
-        dot_data = StringIO()
-        nx.drawing.nx_pydot.write_dot(G, "dot_data.dot")
-        nx.drawing.nx_pydot.write_dot(G, dot_data)
-        graph = pydot.graph_from_dot_data(dot_data.getvalue())[0]
+        nx.drawing.nx_pydot.write_dot(G, fname)
 
     @staticmethod
     def _calltrace_to_callgraph(trace_df):
