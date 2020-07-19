@@ -12,18 +12,14 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     git maven bc        \
     openssh-server wget \
     build-essential     \
-    python-setuptools   \
-    python2.7           \
-    python2.7-dev       \
-    python-pip &&       \
-    pip install --upgrade pip virtualenv  && \
+    python3.6 python3-pip && \
     apt-get clean  && \
     rm -rf /var/lib/apt/lists/*
 
 
 #----- INSTALL CLANG -----
 RUN curl -SL https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz | tar -xJC . && \
-RUN mv clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04 /LLVM_ROOT 
+    mv clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04 /LLVM_ROOT 
 
 #----- INSTALL PYTHON DEPENDENCIES-----
 RUN pip3 install numpy scipy pandas networkx tqdm matplotlib graphviz pydot scikit-learn  
@@ -41,8 +37,8 @@ ENV PROGRAMS_ROOT=/workspace/secern/programs
 ENV GRAPH_ALIGN_ROOT=/workspace/secern/programs
 
 # ----- Update git credentials -----
-git config --global user.name "rahlk"
-git config --global user.email "i.m.ralk@gmail.com"
+RUN git config --global user.name "rahlk" && \
+    git config --global user.email "i.m.ralk@gmail.com"
 
 CMD ["sh -c bash"]
 
