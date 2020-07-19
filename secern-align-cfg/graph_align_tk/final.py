@@ -160,7 +160,6 @@ class FINAL(object):
         h = self.H.tolil()
         s = h
 
-        print()
         for i in range(self.maxiter):
             t2 = time.time()
             prev = s
@@ -173,7 +172,7 @@ class FINAL(object):
             s = (1-alpha)*h + (alpha*q).multiply(S) # add the prior part
             diff = norm(s-prev);
             
-            logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
+            # logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
             if diff < self.tol: # if converge
                 break
 

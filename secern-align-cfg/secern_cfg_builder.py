@@ -11,7 +11,7 @@ from tqdm import tqdm
 root=Path('/workspace/secern/')
 
 class CFGBuilder:
-    def __init__(self, binary_path, test_input_path):
+    def __init__(self, binary_path, test_input_path, project_name=""):
         """ Build a dynamic call graph.
         
         Parameters
@@ -23,6 +23,7 @@ class CFGBuilder:
         """
         self.binary_path = binary_path
         self.test_input_path = test_input_path
+        self.prj_name = project_name
     
     def __enter__(self):
         """ Context manager initialization.
@@ -125,7 +126,7 @@ class CFGBuilder:
         call_trace_df = pd.DataFrame(columns=['source', 'target'])
 
         # Loop through the test files and run them on the binary. 
-        with tqdm(total=50) as pbar:
+        with tqdm(total=50, desc='Generating dynamic call graph for {}...'.format(self.prj_name)) as pbar:
             for input_num, test_input in enumerate(test_input_path.glob("*")):
                 # TODO: REMOVE THE FOLLOWING 2 LINES
                 if input_num > 50:

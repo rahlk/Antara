@@ -24,11 +24,17 @@ if py_path not in sys.path:
     sys.path.append(py_path)
 
 def draw_heatmap(sim_matrix, row_labels, col_labels, save_name="foo.pdf"):
-    fig, ax = plt.subplots()
-    im, cbar = heatmap(sim_matrix, col_labels, row_labels, ax=ax, cmap="YlGn", cbarlabel="Similarity Score")
-    # texts = annotate_heatmap(im, valfmt="{x:.1f} t")
-    fig.tight_layout()
-    fig.savefig(save_name, bbox_inches='tight')
+    w = 4
+    h = 3
+    d = 150
+    plt.figure(figsize=(w, h), dpi=d)
+    heatmap = plt.imshow(sim_matrix)
+    heatmap.set_cmap("YlGn")
+    plt.colorbar()
+    plt.savefig(save_name, bbox_inches='tight')
+    # im, cbar = heatmap(sim_matrix, col_labels, row_labels, ax=ax, cmap="YlGn", cbarlabel="Similarity Score")
+    # # texts = annotate_heatmap(im, valfmt="{x:.1f} t")
+    # fig.tight_layout()
 
 if __name__ == "__main__":
     # Test inputs to parse
@@ -40,7 +46,7 @@ if __name__ == "__main__":
 
     # Get call graphs of readelf
     readelf_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
-    with CFGBuilder(readelf_bin_path, test_input_path) as readelf_builder:
+    with CFGBuilder(readelf_bin_path, test_input_path, 'readelf') as readelf_builder:
         readelf_cfg = readelf_builder.get_dynamic_call_graph(opt_flags='--all')
         readelf_builder.draw_call_graph(readelf_cfg, fname="readelf.dot")
         _, readelf_adj = readelf_builder.graph_to_adjacency_matrix(readelf_cfg, use_weights=False)
@@ -48,7 +54,7 @@ if __name__ == "__main__":
     
     # Get call graphs of objdump
     objdump_bin_path = Path(root.joinpath('projects/elf/binutils/bin/objdump'))
-    with CFGBuilder(objdump_bin_path, test_input_path) as objdump_builder:
+    with CFGBuilder(objdump_bin_path, test_input_path, 'objdump') as objdump_builder:
         objdump_cfg = objdump_builder.get_dynamic_call_graph(opt_flags='-s')
         objdump_builder.draw_call_graph(objdump_cfg, fname="objdump.dot")
         _, objdump_adj = objdump_builder.graph_to_adjacency_matrix(objdump_cfg, use_weights=False)
@@ -84,7 +90,7 @@ if __name__ == "__main__":
     H = H / np.sum(np.sum(H))
     H = sp.sparse.coo_matrix(H)
 
-    for _ in range(100):
+    for _ in tqdm(range(100), desc="Computing CFG similarity..."):
         final = FINAL(A1, A2, H, N1, N2, E1, E2)
         sim_matrix = final.main_proc().tocoo()
         H = sim_matrix
