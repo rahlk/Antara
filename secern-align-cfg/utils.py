@@ -1,14 +1,14 @@
-import networkx as nx
-import pandas as pd
-import matplotlib
-from pathlib import Path
-import matplotlib.pyplot as plt
-from pdb import set_trace
-import matplotlib.pyplot as plt
+import pydot
 import shlex
 import subprocess
+import matplotlib
+import numpy as np
+import pandas as pd
+import networkx as nx
 from io import StringIO
-import pydot
+from pathlib import Path
+from pdb import set_trace
+import matplotlib.pyplot as plt
 
 
 def heatmap(data, row_labels, col_labels, ax=None,

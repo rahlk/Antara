@@ -4,6 +4,8 @@ import logging
 import scipy as sp
 import numpy as np
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
 import networkx as nx
 from tqdm import tqdm
 from pathlib import Path
@@ -92,6 +94,6 @@ if __name__ == "__main__":
     sim_matrix = sim_matrix.toarray()
 
     # Plot as heatmap
-    draw_heatmap(sim_matrix, row_labels, col_labels, savename='Readelf <-> Objdump')
+    draw_heatmap(sim_matrix, row_labels, col_labels, save_name='Readelf <-> Objdump')
 
     set_trace()
