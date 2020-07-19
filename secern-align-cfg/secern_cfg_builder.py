@@ -11,11 +11,8 @@ from tqdm import tqdm
 root=Path('/workspace/secern/')
 
 class CFGBuilder:
-    def __init__(self):
-        pass
-    
-    def __enter__(self, binary_path, test_input_path):
-        """ Context manager initialization.
+    def __init__(self, binary_path, test_input_path):
+        """ Build a dynamic call graph.
         
         Parameters
         ----------
@@ -26,6 +23,11 @@ class CFGBuilder:
         """
         self.binary_path = binary_path
         self.test_input_path = test_input_path
+    
+    def __enter__(self):
+        """ Context manager initialization.
+        """
+        return self
 
     @staticmethod
     def draw_call_graph(G, fname="tmp.pdf"):
@@ -82,13 +84,13 @@ class CFGBuilder:
         scipy.sparse
             A sparse adjacency matrix
         """
-
+        node_list = G.nodes()
         if use_weights:
             adj_mtx = nx.linalg.graphmatrix.adjacency_matrix(G, weight='label')
         else:
             adj_mtx = nx.linalg.graphmatrix.adjacency_matrix(G, weight=None)
 
-        return adj_mtx
+        return node_list, adj_mtx
 
     def get_dynamic_call_graph(self, opt_flags=""):
         """ Runs a test input on the instrumented program to gather the dynamic 
@@ -160,10 +162,3 @@ class CFGBuilder:
             else:
                 continue
 
- 
-if __name__ == "__main__":
-    # Testing readelf
-    binary_path = root.joinpath("projects/elf/binutils/bin/readelf")
-    test_input_path = root.joinpath("projects/elf/test_in/")    
-    G = get_dynamic_call_graph(
-        binary_path, test_input_path, opt_flags="--all")

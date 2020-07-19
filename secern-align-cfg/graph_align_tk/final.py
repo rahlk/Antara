@@ -1,8 +1,19 @@
-import scipy.sparse as sp
-import numpy as np
-import time
-from scipy.sparse.linalg import norm
 import sys
+import time
+import logging
+import numpy as np
+from pdb import set_trace
+import scipy.sparse as sp
+from scipy.sparse.linalg import norm
+
+# Logging Config
+logging.basicConfig(format='[+] %(message)s', level=logging.INFO)
+
+# Silence SparseEfficiencyWarning
+import warnings
+from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
+                          csr_matrix, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
+warnings.simplefilter('ignore', SparseEfficiencyWarning)
 
 class FINAL(object):
     """FINAL: Fast Attributed Network Alignment
@@ -45,7 +56,7 @@ class FINAL(object):
     [1] Zhang, Si, and Hanghang Tong. "FINAL: Fast Attributed Network Alignment." Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. ACM, 2016.
     """
 
-    def __init__(self, A1, A2, H, alpha, maxiter, tol, N1=None, N2=None, E1=None, E2=None):
+    def __init__(self, A1, A2, H, N1=None, N2=None, E1=None, E2=None, alpha=0.01, maxiter=100, tol=1e-9):
         if not sp.isspmatrix_coo(A1):
             A1 = A1.tocoo()
         if not sp.isspmatrix_coo(A2):
@@ -55,6 +66,10 @@ class FINAL(object):
         if not sp.isspmatrix_coo(H):
             H = H.tocoo()
         self.H = H
+        self.N1 = N1
+        self.N2 = N2
+        self.E1 = E1
+        self.E2 = E2
         self.alpha = alpha
         self.maxiter = maxiter
         self.tol = tol
@@ -67,6 +82,12 @@ class FINAL(object):
 
         n1 = self.A1.shape[0]
         n2 = self.A2.shape[0]
+
+        N1 = self.N1
+        N2 = self.N2
+
+        E1 = self.E1
+        E2 = self.E2
 
         # If no node attributes input, then initialize as a vector of 1
         # so that all nodes are treated to have the save attributes which 
@@ -98,7 +119,7 @@ class FINAL(object):
         # Normalize edge feature vectors 
         for l in range(L):
             T1 = T1 + E1[l].power(2) # calculate ||v1||_2^2
-            T2 = T2 + E2[l].power(2) # calculate ||v2||_2^2
+            T2 = T2 + E2[l].power(2)  # calculate ||v2||_2^2
 
         T1.data = 1./np.sqrt(T1.data)
         T2.data = 1./np.sqrt(T2.data)
@@ -139,8 +160,8 @@ class FINAL(object):
         h = self.H.tolil()
         s = h
 
+        print()
         for i in range(self.maxiter):
-            print('iteration {}\n'.format(i))
             t2 = time.time()
             prev = s
             M = q.multiply(s)
@@ -152,7 +173,7 @@ class FINAL(object):
             s = (1-alpha)*h + (alpha*q).multiply(S) # add the prior part
             diff = norm(s-prev);
             
-            print('Time for iteration {}: {} sec, diff = {}\n'.format(i, time.time()-t2, 100*diff))
+            logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
             if diff < self.tol: # if converge
                 break
 
