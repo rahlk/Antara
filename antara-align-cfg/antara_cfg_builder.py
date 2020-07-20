@@ -90,14 +90,14 @@ class CFGBuilder:
 
         return node_list, adj_mtx
 
-    def get_dynamic_call_graph(self, opt_flags=""):
+    def get_dynamic_call_graph(self, opt_flags="", seed_range=(0, 50)):
         """ Runs a test input on the instrumented program to gather the dynamic 
             call graph.
 
         Parameters
         ----------
-        binary_path: str (or pathlib.PosixPath)
-            Path to the binary
+        opt_flags: str 
+            Commandline arguments/flag
         test_input_path: str (or pathlib.PosixPath)
             Directory containing the test_inputs 
         
@@ -126,10 +126,10 @@ class CFGBuilder:
         call_trace_df = pd.DataFrame(columns=['source', 'target'])
 
         # Loop through the test files and run them on the binary. 
-        with tqdm(total=50, desc='Generating dynamic call graph for {}...'.format(self.prj_name)) as pbar:
+        with tqdm(total=len(seed_range), desc='::-Generating call graph-::') as pbar:
             for input_num, test_input in enumerate(test_input_path.glob("*")):
                 # TODO: REMOVE THE FOLLOWING 2 LINES
-                if input_num > 50:
+                if input_num not in seed_range:
                     continue
 
                 # Run the instrumented binary
@@ -152,8 +152,7 @@ class CFGBuilder:
         """ Clean up opertaions
         """
         pwd = os.getcwd()
-        files_to_clean_up = ['callgraph.csv', 
-            'callgraph.dot', 'out_data.dot', 'outfile.pdf', 'plotgraph.png']
+        files_to_clean_up = ['callgraph.csv', 'callgraph.dot', 'out_data.dot', 'outfile.pdf', 'plotgraph.png']
         for f in map(Path, files_to_clean_up):
             if f.exists():
                 os.remove(f)

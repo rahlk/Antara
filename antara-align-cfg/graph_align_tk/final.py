@@ -16,29 +16,28 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
 
 class FINAL(object):
-    """FINAL: Fast Attributed Network Alignment
+    """ FINAL: Fast Attributed Network Alignment
 
-    + The algorithm is the generalized attributed network alignment algorithm. The algorithm can handle the cases no matter node attributes and/or edge attributes are given. 
-
-    + The algorithm can handle either numerical or categorical attributes (feature vectors) for both edges and nodes. 
-    
-    + The algorithm uses cosine similarity to calculate node and edge feature vector similarities. E.g., sim(v1, v2) = <v1, v2>/(||v1||_2*||v2||_2). For categorical attributes, this is still equivalent to the indicator function in the original published paper.
+    The algorithm is the generalized attributed network alignment algorithm. The algorithm can handle the cases no 
+    matter node attributes and/or edge attributes are given. The algorithm can handle either numerical or categorical 
+    attributes (feature vectors) for both edges and nodes. The algorithm uses cosine similarity to calculate node and 
+    edge feature vector similarities. E.g., sim(v1, v2) = <v1, v2>/(||v1||_2*||v2||_2). For categorical attributes, 
+    this is still equivalent to the indicator function in the original published paper.
 
     Parameters
     ----------
-    A1, A2: np.array (n1*n1 square matrix)
+    A1, A2: np.array (n1*n1 square matrix for G1 n2*n2 for G2)
             Input adjacency matrix of G1 with n1 nodes. A2 is the same for graph G2.
 
-    N1, N2: np.array (n1*K matrix)
-            Node attribute matrix for graph G1. Each row is a node, and each column represents an attribute. N2 is the same for graph G2.
+    N1, N2: np.array (n1*K matrix or n2*K matrix for G1 or G2 respectively)
+            Node attribute matrix for graph G1. Each row is a node, and each column represents an attribute. 
+            N2 is the same for graph G2.
 
-    E1, E2: Set 
-            A L*1 set, where E1{i} is a n1*n1 matrix and nonzero entry is
-            the i-th attribute of edges. E2{i} is same. Similarly,  if the
-            input edge attributes are categorical, we can use one hot
-            encoding, i.e., E1{i}(a,b)=1 if edge (a,b) has categorical
-            attribute i. If E1 and E2 are empty, i.e., E1 = {} or [], E2 = {}
-            or [], then no edge attributes are input.
+    E1, E2: List (L*1)
+            Edge attribute list where E1[i] is an n1*n1 matrix and nonzero entry is the i-th attribute of edges. 
+            E2{i} is same. Similarly, if the input edge attributes are categorical, we can use one hot encoding, 
+            i.e., E1{i}(a,b)=1 if edge (a,b) has categorical attribute i. If E1 and E2 are empty, i.e., E1 = {} or [], 
+            E2 = {} or [], then no edge attributes are input.
 
     H: a n2*n1 prior node similarity matrix, e.g., degree similarity. H
         should be normalized, e.g., sum(sum(H)) = 1.
@@ -53,7 +52,8 @@ class FINAL(object):
 
     Reference
     ---------
-    [1] Zhang, Si, and Hanghang Tong. "FINAL: Fast Attributed Network Alignment." Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. ACM, 2016.
+    [1] Zhang, Si, and Hanghang Tong. "FINAL: Fast Attributed Network Alignment." Proceedings of the 22nd ACM SIGKDD 
+        International Conference on Knowledge Discovery and Data Mining. ACM, 2016.
     """
 
     def __init__(self, A1, A2, H, N1=None, N2=None, E1=None, E2=None, alpha=0.5, maxiter=100, tol=1e-9):

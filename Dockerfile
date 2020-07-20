@@ -1,4 +1,4 @@
-FROM rkrsn/secern:main
+FROM rkrsn/antara:main
 
 MAINTAINER helpacksi <oo.helpacksi@gmail.com>
 
