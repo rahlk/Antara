@@ -8,6 +8,8 @@ from scipy.sparse.linalg import norm
 from tqdm import tqdm
 
 # Logging Config
+logger = logging.getLogger()
+logger.disabled = True
 logging.basicConfig(format='[+] %(message)s', level=logging.INFO)
 
 # Silence SparseEfficiencyWarning
@@ -156,7 +158,8 @@ class FINAL(object):
         D = N.multiply(d)
         DD = D.power(2)
         DD = D.power(-0.25)
-        DD[D==0] = 0   # define inf to 0
+        DD[D == 0] = 0  # define inf to 0
+        
         # fixed-point solution
         q = DD.multiply(N).tolil().reshape((n2, n1))
         h = self.H.tolil()
@@ -171,8 +174,8 @@ class FINAL(object):
                 S = S + E2[l].multiply(A2).dot(M).dot(E1[l].multiply(A1)) # calculate the consistency part
 
             s = (1 - alpha) * h + (alpha * q).multiply(S)  # add the prior part
-            set_trace()
-            diff = norm(s-prev);
+            # Compute erroe
+            diff = norm(np.nan_to_num(s-prev));
             logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
             if diff < self.tol: # if converge
                 break

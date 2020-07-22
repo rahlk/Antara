@@ -1,4 +1,5 @@
 import os
+import sys
 import shlex
 import subprocess
 import numpy as np
@@ -10,7 +11,13 @@ from pdb import set_trace
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-root=Path('/workspace/antara/')
+# Add project source to path
+root = Path(os.path.abspath(os.path.join(
+    os.getcwd().split('antara')[0], 'antara')))
+
+py_path = root.joinpath('antara-align-cfg')
+if py_path not in sys.path:
+    sys.path.append(py_path)
 
 class Arg:
     def __init__(self):
@@ -67,7 +74,7 @@ class Deepwalk:
         dict{str, list}
             A dictionary of node: node_embeddings 
         """
-        embeddings = defaultdict(lamda: list())
+        embeddings = defaultdict(lambda: list())
         with open('.deepwalk.embedding', 'r') as embedding_file:
             for i, line in enumerate(embedding_file):
                 if i == 0:  # Ignore header

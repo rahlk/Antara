@@ -7,22 +7,27 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from tqdm import tqdm
-from pathlib import Path
 from pdb import set_trace
-from deepwalk import Deepwalk
+from node2vec import node2vec
 import matplotlib.pyplot as plt
+from nltk.metrics.distance import jaro_winkler_similarity
+from sklearn.metrics.pairwise import cosine_similarity
+
+from deepwalk import Deepwalk
 from graph_align_tk import FINAL
 from antara_cfg_builder import CFGBuilder
 from utils import heatmap, annotate_heatmap
-from nltk.metrics.distance import jaro_winkler_similarity
-from sklearn.metrics.pairwise import cosine_similarity
+from pathlib import Path
 
 # Logging Config
 logging.basicConfig(format='[+] %(message)s', level=logging.INFO)
 
-root = Path('/workspace/antara/')
-py_path = Path('/workspace/antara/antara-align-cfg')
+# Add project source to path
+root = Path(os.path.abspath(os.path.join(
+    os.getcwd().split('antara')[0], 'antara')))
 
+
+py_path = root.joinpath('antara-align-cfg')
 if py_path not in sys.path:
     sys.path.append(py_path)
 
@@ -105,6 +110,9 @@ def get_prior_similarity(G1_nodes, G2_nodes, dist="jw"):
 # ---------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
+    
+    learning_rate = 0.5
+
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
     
@@ -112,20 +120,22 @@ if __name__ == "__main__":
     #  Run instrumented programs to get dynamic call graphs  #
     #  ----------------------------------------------------  #
 
-    seeds_to_use = np.random.randint(0, 500, size=50)
-    for seed_to_use in tqdm(seeds_to_use, desc=":: Computing CFG alignment... :"):
-        # Get call graphs of readelf
+    seeds_to_use = np.random.randint(0, 500, size=1)
+    sim_matrix_prev = None
+
+    for seed in tqdm(seeds_to_use, desc=":: Computing CFG alignment... :"):
+        
         G1_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
+        G2_bin_path = G1_bin_path
+        
+        # Get call graphs of readelf
         with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
-            G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_range=seeds_to_use)
-            # G1_builder.draw_call_graph(G1, fname="readelf1.dot")
+            G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed)
             _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
             G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
         
-        G2_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
         with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
-            G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_range=seeds_to_use)
-            # G2_builder.draw_call_graph(G2, fname="readelf2.dot")
+            G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed)
             _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
             G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
 
@@ -155,12 +165,15 @@ if __name__ == "__main__":
         # N2 = np.ones((n2, 1))
 
         # Get node attribute matrix. We initialize with deepwalk. 
-        with Deepwalk(G1) as dw:
-            N1 = dw.get_node_embeddings()
+        # with Deepwalk(G1) as dw:
+        #     N1 = dw.get_node_embeddings()
         
-        with Deepwalk(G2) as dw:
-            N2 = dw.get_node_embeddings()
+        # with Deepwalk(G2) as dw:
+        #     N2 = dw.get_node_embeddings()
         
+        N1 = node2vec(G1)
+        N2 = node2vec(G2)
+
         # Get edge attribute matrix
         E1 = list()
         E2 = list()
@@ -170,11 +183,16 @@ if __name__ == "__main__":
         E2.append(G2_edge_attr)
 
         # Get initial similarity matrix
-        # H = np.ones((n2, n1))
-        # H = cosine_similarity(N2, N1)
-        # H = H / np.sum(np.sum(H))
-        # H = sp.sparse.coo_matrix(H)
-        H = get_prior_similarity(G1_nodes, G2_nodes)
+        H = cosine_similarity(N2, N1)
+        H = (H - H.min()) / (H.max()-H.min())
+        H = H / np.sum(np.sum(H))
+        
+        if sim_matrix_prev is not None:
+            sim_matrix_prev = sim_matrix_prev / np.sum(np.sum(sim_matrix_prev))
+            H = learning_rate * sim_matrix_prev + (1-learning_rate) * H
+        
+        H = sp.sparse.coo_matrix(H)
+        # H = get_prior_similarity(G1_nodes, G2_nodes)
 
         # H = np.identity(n1)
         final = FINAL(A1, A2, H, N1, N2, E1, E2, maxiter=1000, tol=1e-9)
@@ -195,25 +213,20 @@ if __name__ == "__main__":
         lo = sim_matrix.min()
         hi = sim_matrix.max()
         sim_matrix = (sim_matrix - lo) / (hi - lo)
+        sim_matrix_prev = sim_matrix
 
         get_G1_label = lambda i: G1_nodes[i]
         
-        for i, row in enumerate(sim_matrix):
-            top_matches = np.argsort(row)[::-1]
-            top_five = top_matches[:3]
-            G1_nodes = tuple(G1_nodes)
-            G2_nodes = tuple(G2_nodes)
-            print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
 
-        print("====================")
-        for i, row in enumerate(H.A):
-            top_matches = np.argsort(row)[::-1]
-            top_five = top_matches[:3]
-            G1_nodes = tuple(G1_nodes)
-            G2_nodes = tuple(G2_nodes)
-            print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
+    for i, row in enumerate(sim_matrix):
+        top_matches = np.argsort(row)[::-1]
+        top_five = top_matches[:3]
+        G1_nodes = tuple(G1_nodes)
+        G2_nodes = tuple(G2_nodes)
+        print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
 
-        set_trace()
+    set_trace()
+    
     # Plot as heatmap
     _draw_heatmap(sim_matrix, save_name='readelf-objdump.pdf')
 

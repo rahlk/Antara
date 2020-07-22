@@ -1,4 +1,5 @@
 import os
+import sys
 import shlex
 import subprocess
 import pandas as pd
@@ -8,7 +9,13 @@ from pathlib import Path
 from pdb import set_trace
 import matplotlib.pyplot as plt
 
-root=Path('/workspace/antara/')
+# Add project source to path
+root = Path(os.path.abspath(os.path.join(
+    os.getcwd().split('antara')[0], 'antara')))
+
+py_path = root.joinpath('antara-align-cfg')
+if py_path not in sys.path:
+    sys.path.append(py_path)
 
 class CFGBuilder:
     def __init__(self, binary_path, test_input_path, project_name=""):
@@ -90,7 +97,7 @@ class CFGBuilder:
 
         return node_list, adj_mtx
 
-    def get_dynamic_call_graph(self, opt_flags="", seed_range=(0, 50)):
+    def get_dynamic_call_graph(self, opt_flags="", seed_id=0):
         """ Runs a test input on the instrumented program to gather the dynamic 
             call graph.
 
@@ -126,17 +133,17 @@ class CFGBuilder:
         call_trace_df = pd.DataFrame(columns=['source', 'target'])
 
         # Loop through the test files and run them on the binary. 
-        for seed_id in tqdm(seed_range, desc=':: Generating call graph ::'):
-            for input_num, test_input in enumerate(test_input_path.glob("*")):
-                if input_num != seed_id:
-                    continue
+        for input_num, test_input in enumerate(test_input_path.glob("*")):
+            if input_num != seed_id:
+                continue
+            else:
                 # Run the instrumented binary
                 subprocess.run([binary_path, opt_flags, test_input],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 # Convert the raw calltrace to a pandas dataframe
                 call_trace = pd.read_csv('callgraph.csv')
                 call_trace_df = call_trace_df.append(call_trace)
-                
+                    
         
         # Convert the calltrace to a NetworkX graph
         G = self._calltrace_to_callgraph(call_trace_df)

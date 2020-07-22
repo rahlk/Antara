@@ -1,6 +1,9 @@
 tqdm
 pydot
 pandas
+gensim
+nltk
+deepwalk
 networkx
 graphviz
 pydotplus
