@@ -125,7 +125,7 @@ def minmax_norm(x):
 
 if __name__ == "__main__":
     
-    learning_rate = 0.99
+    learning_rate = 0.01
 
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
@@ -252,8 +252,9 @@ if __name__ == "__main__":
         hi = sim_matrix.max()
         sim_matrix = (sim_matrix - lo) / (hi - lo)
         sim_matrix_prev = sim_matrix
-
-        get_G1_label = lambda i: G1_nodes[i]
+        print("Accuracy", accuracy(sim_matrix_prev))
+    
+    get_G1_label = lambda i: G1_nodes[i]
 
     for i, row in enumerate(sim_matrix):
         top_matches = np.argsort(row)[::-1]
