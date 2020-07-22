@@ -117,13 +117,15 @@ def accuracy(mat):
     
     return round((correct / total) * 100, 3) 
 
+def minmax_norm(x):
+    return (x - x.min())/(x.max() - x.min())
 
 # ============================================================================ #
 
 
 if __name__ == "__main__":
     
-    learning_rate = 0.9
+    learning_rate = 0.99
 
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
@@ -134,30 +136,31 @@ if __name__ == "__main__":
     #  Run instrumented programs to get dynamic call graphs  #
     #  ----------------------------------------------------  #
     np.random.seed(1729)
-    seeds_to_use = np.random.randint(0, 500, size=2)
+    seeds_to_use = np.random.randint(0, 500, size=10)
     sim_matrix_prev = None
 
-    for _, (seed_1, seed_2) in tqdm(enumerate(zip(seeds_to_use[:-1], seeds_to_use[1:])), desc=":: Computing CFG alignment... :"):
-        
+    for i in tqdm(range(len(seeds_to_use) - 1), desc=":: Computing CFG alignment... :"):
+        seed_1 = seeds_to_use[i]
+        seed_2 = seeds_to_use[i+1]
         G1_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
         G2_bin_path = G1_bin_path
         
         # Get call graphs of readelf
         with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
-            G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
-            # if G1 is None:
-            #     G1 = G
-            # else:
-            #     G1.update(G)
+            G = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
+            if G1 is None:
+                G1 = G
+            else:
+                G1.update(G)
             _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
             G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
         
         with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
-            G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_2)
-            # if G2 is None:
-            #     G2 = G
-            # else:
-            #     G2.update(G)
+            G = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_2)
+            if G2 is None:
+                G2 = G
+            else:
+                G2.update(G)
             _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
             G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
 
@@ -216,17 +219,16 @@ if __name__ == "__main__":
                 temp = sim_matrix_prev
                 sim_matrix_prev = np.zeros(H.shape)
                 sim_matrix_prev[:temp.shape[0], :temp.shape[1]] = temp
-                H = learning_rate * sim_matrix_prev + (1-learning_rate) * H
+                sim_matrix_prev = minmax_norm(sim_matrix_prev)
             
             elif sim_matrix_prev.size > H.size:
                 sim_matrix_prev = sim_matrix_prev[:H.shape[0], :H.shape[1]]
-                H = learning_rate * sim_matrix_prev + (1-learning_rate) * H
+                sim_matrix_prev = minmax_norm(sim_matrix_prev)
             
-            else:
-                H = learning_rate * sim_matrix_prev + (1 - learning_rate) * H
+            H = learning_rate * sim_matrix_prev + (1 - learning_rate) * H
             
         
-        H = H / np.sum(np.sum(H))
+        # H = H / np.sum(np.sum(H))
         H = sp.sparse.coo_matrix(H)
         # H = get_prior_similarity(G1_nodes, G2_nodes)
 
