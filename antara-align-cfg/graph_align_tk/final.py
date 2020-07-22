@@ -5,6 +5,7 @@ import numpy as np
 from pdb import set_trace
 import scipy.sparse as sp
 from scipy.sparse.linalg import norm
+from tqdm import tqdm
 
 # Logging Config
 logging.basicConfig(format='[+] %(message)s', level=logging.INFO)
@@ -56,7 +57,7 @@ class FINAL(object):
         International Conference on Knowledge Discovery and Data Mining. ACM, 2016.
     """
 
-    def __init__(self, A1, A2, H, N1=None, N2=None, E1=None, E2=None, alpha=0.5, maxiter=100, tol=1e-9):
+    def __init__(self, A1, A2, H, N1=None, N2=None, E1=None, E2=None, alpha=0.2, maxiter=100, tol=1e-9):
         if not sp.isspmatrix_coo(A1):
             A1 = A1.tocoo()
         if not sp.isspmatrix_coo(A2):
@@ -131,8 +132,10 @@ class FINAL(object):
         # Normalize node feature vectors
         K1 = np.power(np.sum(np.power(N1, 2),1), -.5)
         K1[np.isinf(K1)] = 0
+        K1 = np.tile(K1.reshape((n1, 1)), (1, K))
         K2 = np.power(np.sum(np.power(N2, 2),1), -.5)
         K2[np.isinf(K2)] = 0
+        K2 = np.tile(K2.reshape((n2, 1)), (1, K))
 
         N1 = K1 * N1 # normalize the node attribute for A1
         N2 = K2 * N2 # normalize the node attribute for A2
@@ -151,130 +154,27 @@ class FINAL(object):
                                 , E2[l].multiply(A2).dot(N2[:,k])).reshape((-1,1)))
 
         D = N.multiply(d)
-        DD = D.power(-.5)
-
+        DD = D.power(2)
+        DD = D.power(-0.25)
         DD[D==0] = 0   # define inf to 0
-
         # fixed-point solution
         q = DD.multiply(N).tolil().reshape((n2, n1))
         h = self.H.tolil()
         s = h
-
+        # for i in tqdm(range(self.maxiter), desc=":: Computing Graph Similarity ::"):
         for i in range(self.maxiter):
             t2 = time.time()
             prev = s
             M = q.multiply(s)
             S = sp.coo_matrix((n2, n1))
-
             for l in range(L):
                 S = S + E2[l].multiply(A2).dot(M).dot(E1[l].multiply(A1)) # calculate the consistency part
 
-            s = (1-alpha)*h + (alpha*q).multiply(S) # add the prior part
+            s = (1 - alpha) * h + (alpha * q).multiply(S)  # add the prior part
+            set_trace()
             diff = norm(s-prev);
-            
-            # logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
+            logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
             if diff < self.tol: # if converge
                 break
 
-        return s
-
-def read_adjlist(graph_file, graph_size):
-    graph_dict = dict()
-    graph_dict_back = list()
-    idx = 0
-    graph = sp.lil_matrix((graph_size, graph_size))
-    with open(graph_file, 'r') as fin:
-        for ln in fin:
-            elems = ln.strip().split()
-            src_id = None
-            for gid in elems:
-                if not gid in graph_dict:
-                    graph_dict[gid] = idx
-                    graph_dict_back.append(gid)
-                    idx+=1
-                if not src_id:
-                    src_id = graph_dict[gid]
-                    continue
-                graph[src_id, graph_dict[gid]] = 1
-
-    return graph, graph_dict, graph_dict_back
-
-def read_edgelist(graph_file, graph_size):
-    graph_dict = dict()
-    graph_dict_back = list()
-    idx = 0
-    graph = sp.lil_matrix((graph_size, graph_size))
-    with open(graph_file, 'r') as fin:
-        for ln in fin:
-            elems = ln.strip().split()
-            if len(elems)<2:
-                continue
-            first_id_str = elems[0]
-            sec_id_str = elems[1]
-            if first_id_str not in graph_dict:
-                graph_dict[first_id_str] = idx
-                graph_dict_back.append(first_id_str)
-                idx += 1
-            if sec_id_str not in graph_dict:
-                graph_dict[sec_id_str] = idx
-                graph_dict_back.append(sec_id_str)
-                idx += 1
-            first_idx = graph_dict[first_id_str]
-            sec_idx = graph_dict[sec_id_str]
-            graph[first_idx, sec_idx] = 1
-            graph[sec_idx, first_idx] = 1
-
-    return graph, graph_dict, graph_dict_back
-
-def read_linkage(linkage_file, graph_g_dict, graph_g_size, graph_f_dict, graph_f_size):
-    linkage = sp.lil_matrix((graph_g_size, graph_f_size))
-    with open(linkage_file, 'r') as fin:
-        for ln in fin:
-            elems = ln.strip().split()
-            if not elems[0] in graph_g_dict:
-                continue
-            if not elems[1] in graph_f_dict:
-                continue
-            g_id = graph_g_dict[elems[0]]
-            f_id = graph_f_dict[elems[1]]
-            linkage[g_id, f_id] = 1
-
-    return linkage
-
-def main_proc(graph_files, graph_sizes, linkage_file, alpha, epoch, tol, graph_format, output_file):
-
-    graph_f_size = graph_sizes[0]
-    graph_g_size = graph_sizes[1]
-
-    if graph_format=='adjlist':
-        read_graph = read_adjlist
-    if graph_format=='edgelist':
-        read_graph = read_edgelist
-
-    graph_f, graph_f_dict, graph_f_dict_back = read_graph(graph_files[0], graph_f_size)
-    graph_g, graph_g_dict, graph_g_dict_back = read_graph(graph_files[1], graph_g_size)
-
-    linkage = read_linkage(linkage_file, graph_g_dict, graph_g_size, graph_f_dict, graph_f_size)
-
-    final = FINAL(graph_f, graph_g, linkage, alpha, epoch, tol)
-
-    res = final.main_proc().tocoo()
-    row = res.row
-    col = res.col
-    data = res.data
-    last_row = None
-    wrtLn = ''
-    wrtCnt = 0
-    with open(output_file, 'w') as fout:
-        for i in range(len(data)):
-            if row[i] != last_row:
-                wrtLn = wrtLn[:-1]+'\n' if last_row else ''
-                last_row = row[i]
-                wrtLn += graph_g_dict_back[last_row]+','
-                wrtCnt += 1
-                if wrtCnt%100==0:
-                    fout.write(wrtLn)
-                    wrtLn = ''
-            wrtLn += '{}:{},'.format(graph_f_dict_back[col[i]], data[i])
-        if wrtLn:
-            fout.write(wrtLn[:-1])
+        return s 

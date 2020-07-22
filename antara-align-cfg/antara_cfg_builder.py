@@ -1,14 +1,14 @@
 import os
-import networkx as nx
+import shlex
+import subprocess
 import pandas as pd
+import networkx as nx
+from tqdm import tqdm
 from pathlib import Path
 from pdb import set_trace
 import matplotlib.pyplot as plt
-import shlex
-import subprocess
-from tqdm import tqdm
 
-root=Path('/workspace/secern/')
+root=Path('/workspace/antara/')
 
 class CFGBuilder:
     def __init__(self, binary_path, test_input_path, project_name=""):
@@ -82,7 +82,7 @@ class CFGBuilder:
         scipy.sparse
             A sparse adjacency matrix
         """
-        node_list = G.nodes()
+        node_list = tuple(G.nodes())
         if use_weights:
             adj_mtx = nx.linalg.graphmatrix.adjacency_matrix(G, weight='label')
         else:
@@ -126,22 +126,17 @@ class CFGBuilder:
         call_trace_df = pd.DataFrame(columns=['source', 'target'])
 
         # Loop through the test files and run them on the binary. 
-        with tqdm(total=len(seed_range), desc='::-Generating call graph-::') as pbar:
+        for seed_id in tqdm(seed_range, desc=':: Generating call graph ::'):
             for input_num, test_input in enumerate(test_input_path.glob("*")):
-                # TODO: REMOVE THE FOLLOWING 2 LINES
-                if input_num not in seed_range:
+                if input_num != seed_id:
                     continue
-
                 # Run the instrumented binary
                 subprocess.run([binary_path, opt_flags, test_input],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                
                 # Convert the raw calltrace to a pandas dataframe
                 call_trace = pd.read_csv('callgraph.csv')
                 call_trace_df = call_trace_df.append(call_trace)
                 
-                # Update progress bar
-                pbar.update(1)
         
         # Convert the calltrace to a NetworkX graph
         G = self._calltrace_to_callgraph(call_trace_df)
