@@ -112,109 +112,108 @@ if __name__ == "__main__":
     #  Run instrumented programs to get dynamic call graphs  #
     #  ----------------------------------------------------  #
 
-    # Get call graphs of readelf
     seeds_to_use = np.random.randint(0, 500, size=50)
-    G1_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
-    with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
-        G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_range=seeds_to_use)
-        G1_builder.draw_call_graph(G1, fname="readelf1.dot")
-        _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
-        G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
-    
-    # # Get call graphs of objdump
-    # seed_range_G2 = np.random.randint(501, 1000, size=50)
-    # G2_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
-    # with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
-    #     G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_range=seeds_to_use)
-    #     G2_builder.draw_call_graph(G2, fname="readelf2.dot")
-    #     _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
-    #     G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
+    for seed_to_use in tqdm(seeds_to_use, desc=":: Computing CFG alignment... :"):
+        # Get call graphs of readelf
+        G1_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
+        with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
+            G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_range=seeds_to_use)
+            # G1_builder.draw_call_graph(G1, fname="readelf1.dot")
+            _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
+            G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
+        
+        G2_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
+        with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
+            G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_range=seeds_to_use)
+            # G2_builder.draw_call_graph(G2, fname="readelf2.dot")
+            _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
+            G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
 
-    # Get call graphs of objdump
-    G2_bin_path = Path(root.joinpath('projects/elf/binutils/bin/objdump'))
-    with CFGBuilder(G2_bin_path, test_input_path, 'objdump') as G2_builder:
-        G2 = G2_builder.get_dynamic_call_graph(opt_flags='-s', seed_range=seeds_to_use)
-        G2_builder.draw_call_graph(G2, fname="objdump.dot")
-        _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
-        G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
-    
-    
-    # ----------------------------- #
-    # Align call graphs using FINAL #
-    # ----------------------------- #
+        # # Get call graphs of objdump
+        # G2_bin_path = Path(root.joinpath('projects/elf/binutils/bin/objdump'))
+        # with CFGBuilder(G2_bin_path, test_input_path, 'objdump') as G2_builder:
+        #     G2 = G2_builder.get_dynamic_call_graph(opt_flags='-s', seed_range=seeds_to_use)
+        #     G2_builder.draw_call_graph(G2, fname="objdump.dot")
+        #     _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
+        #     G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
+        
+        
+        # ----------------------------- #
+        # Align call graphs using FINAL #
+        # ----------------------------- #
 
-    # Get adjacency matrices
-    A1 = G1_adj
-    A2 = G2_adj
+        # Get adjacency matrices
+        A1 = G1_adj
+        A2 = G2_adj
 
-    # Get the vertex counts
-    n1 = A1.shape[0]
-    n2 = A2.shape[0]
-    
-    # # Get node attribute matrix. We initialize with ones. 
-    # N1 = np.ones((n1, 1))
-    # N2 = np.ones((n2, 1))
+        # Get the vertex counts
+        n1 = A1.shape[0]
+        n2 = A2.shape[0]
+        
+        # # Get node attribute matrix. We initialize with ones. 
+        # N1 = np.ones((n1, 1))
+        # N2 = np.ones((n2, 1))
 
-    # Get node attribute matrix. We initialize with deepwalk. 
-    with Deepwalk(G1) as dw:
-        N1 = dw.get_node_embeddings()
-    
-    with Deepwalk(G2) as dw:
-        N2 = dw.get_node_embeddings()
-    
-    # Get edge attribute matrix
-    E1 = list()
-    E2 = list()
+        # Get node attribute matrix. We initialize with deepwalk. 
+        with Deepwalk(G1) as dw:
+            N1 = dw.get_node_embeddings()
+        
+        with Deepwalk(G2) as dw:
+            N2 = dw.get_node_embeddings()
+        
+        # Get edge attribute matrix
+        E1 = list()
+        E2 = list()
 
-    # -- Use call counts as edge attributes --
-    E1.append(A1)
-    E2.append(A2)
+        # -- Use call counts as edge attributes --
+        E1.append(G1_edge_attr)
+        E2.append(G2_edge_attr)
 
-    # Get initial similarity matrix
-    # H = np.ones((n2, n1))
-    # H = cosine_similarity(N2, N1)
-    # H = H / np.sum(np.sum(H))
-    # H = sp.sparse.coo_matrix(H)
-    H = get_prior_similarity(G1_nodes, G2_nodes)
+        # Get initial similarity matrix
+        # H = np.ones((n2, n1))
+        # H = cosine_similarity(N2, N1)
+        # H = H / np.sum(np.sum(H))
+        # H = sp.sparse.coo_matrix(H)
+        H = get_prior_similarity(G1_nodes, G2_nodes)
 
-    # H = np.identity(n1)
-    final = FINAL(A1, A2, H, N1, N2, E1, E2, maxiter=1000, tol=1e-9)
-    sim_matrix = final.main_proc().tocoo()
-    
-    if n1 == sim_matrix.shape[1]:
-        row_labels = G1_nodes
-        col_labels = G2_nodes
-    else:
-        col_labels = G1_nodes
-        row_labels = G2_nodes
-    
-    # Convert to a numpy.ndarray
-    sim_matrix = sim_matrix.A
-    # TODO: Why are there NaN's?
-    sim_matrix = np.nan_to_num(sim_matrix)
-    # Normalize weights using min/max normalization
-    lo = sim_matrix.min()
-    hi = sim_matrix.max()
-    sim_matrix = (sim_matrix - lo) / (hi - lo)
+        # H = np.identity(n1)
+        final = FINAL(A1, A2, H, N1, N2, E1, E2, maxiter=1000, tol=1e-9)
+        sim_matrix = final.main_proc().tocoo()
+        
+        if n1 == sim_matrix.shape[1]:
+            row_labels = G1_nodes
+            col_labels = G2_nodes
+        else:
+            col_labels = G1_nodes
+            row_labels = G2_nodes
+        
+        # Convert to a numpy.ndarray
+        sim_matrix = sim_matrix.A
+        # TODO: Why are there NaN's?
+        sim_matrix = np.nan_to_num(sim_matrix)
+        # Normalize weights using min/max normalization
+        lo = sim_matrix.min()
+        hi = sim_matrix.max()
+        sim_matrix = (sim_matrix - lo) / (hi - lo)
 
-    get_G1_label = lambda i: G1_nodes[i]
-    
-    for i, row in enumerate(sim_matrix):
-        top_matches = np.argsort(row)[::-1]
-        top_five = top_matches[:3]
-        G1_nodes = tuple(G1_nodes)
-        G2_nodes = tuple(G2_nodes)
-        print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
+        get_G1_label = lambda i: G1_nodes[i]
+        
+        for i, row in enumerate(sim_matrix):
+            top_matches = np.argsort(row)[::-1]
+            top_five = top_matches[:3]
+            G1_nodes = tuple(G1_nodes)
+            G2_nodes = tuple(G2_nodes)
+            print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
 
-    print("====================")
-    for i, row in enumerate(H.A):
-        top_matches = np.argsort(row)[::-1]
-        top_five = top_matches[:3]
-        G1_nodes = tuple(G1_nodes)
-        G2_nodes = tuple(G2_nodes)
-        print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
+        print("====================")
+        for i, row in enumerate(H.A):
+            top_matches = np.argsort(row)[::-1]
+            top_five = top_matches[:3]
+            G1_nodes = tuple(G1_nodes)
+            G2_nodes = tuple(G2_nodes)
+            print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
 
-    set_trace()
+        set_trace()
     # Plot as heatmap
     _draw_heatmap(sim_matrix, save_name='readelf-objdump.pdf')
 

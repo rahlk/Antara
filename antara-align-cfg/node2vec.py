@@ -12,24 +12,6 @@ from collections import defaultdict
 
 root=Path('/workspace/antara/')
 
-class Arg:
-    def __init__(self):
-        self.seed = 0
-        self.log = "INFO"
-        self.workers = 1
-        self.debug = False
-        self.window_size = 5
-        self.walk_length = 40
-        self.undirected = True
-        self.number_walks = 10
-        self.format = 'edgelist'
-        self.representation_size = 64
-        self.vertex_freq_degree = False
-        self.input = '.deepwalk.edgelist'
-        self.output = '.deepwalk.embedding'
-        self.matfile_variable_name = 'network'
-        self.max_memory_data_size = 1000000000
-
 class Deepwalk:
     def __init__(self, G):
         """ Get node embedding using Deepwalk
@@ -42,19 +24,19 @@ class Deepwalk:
         self.G = G
         # Convert nodes to integers for deepwalk. 
         # Note: By default, node ordering is infered form G.nodes() below.
-        self.int_G = nx.relabel.convert_node_labels_to_integers(G)
+        self.int_G = nx.relabel.convert_node_labels_to_integers(
+            G, label_attribute='label')
         
     def __enter__(self):
         """ Context manager initialization.
         """
-        files_to_clean_up = ['.deepwalk.edgelist', '.deepwalk.embedding']
-        for f in map(Path, files_to_clean_up):
+        file_to_clean_up = '.node2vec.emb'
+        for f in map(Path, file_to_clean_up):
             if f.exists():
                 os.remove(f)
             else:
                 continue
-        # Save the graph as edgelist
-        nx.write_edgelist(self.int_G, '.deepwalk.edgelist')
+        
         return self
         
     @staticmethod
