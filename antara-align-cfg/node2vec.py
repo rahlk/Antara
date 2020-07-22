@@ -192,8 +192,8 @@ def node2vec(G):
 	G = G.preprocess_transition_probs()
 	walks = G.simulate_walks(num_walks=64, walk_length=16)
 	walks = [list(map(str, walk)) for walk in walks]
-	model = Word2Vec(walks, size=128, window=32,
-                  min_count=0, sg=1, workers=4, iter=128)
+	model = Word2Vec(walks, size=128, window=64,
+                  min_count=0, sg=1, workers=32, iter=128)
 	
 	embeddings = []
 	for node in orig_G.nodes():

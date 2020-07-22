@@ -107,35 +107,57 @@ def get_prior_similarity(G1_nodes, G2_nodes, dist="jw"):
     H = sp.sparse.coo_matrix(H)
     return H
 
-# ---------------------------------------------------------------------------- #
+def accuracy(mat):
+    correct = 0
+    total = 0
+    for i, row in enumerate(mat):
+        top_match = np.argsort(row)[::-1]
+        correct += 1 if i in top_match[:10] else 0
+        total += 1
+    
+    return round((correct / total) * 100, 3) 
+
+
+# ============================================================================ #
+
 
 if __name__ == "__main__":
     
-    learning_rate = 0.5
+    learning_rate = 0.8
 
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
-    
+    G1 = None
+    G2 = None
+
     #  ----------------------------------------------------  #
     #  Run instrumented programs to get dynamic call graphs  #
     #  ----------------------------------------------------  #
 
-    seeds_to_use = np.random.randint(0, 500, size=1)
+    seeds_to_use = np.random.randint(0, 500, size=2)
     sim_matrix_prev = None
 
-    for seed in tqdm(seeds_to_use, desc=":: Computing CFG alignment... :"):
+    for seed_1, seed_2 in tqdm(zip(seeds_to_use[:-1], seeds_to_use[1:]), desc=":: Computing CFG alignment... :"):
         
         G1_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
         G2_bin_path = G1_bin_path
         
         # Get call graphs of readelf
         with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
-            G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed)
+            G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
+            # if G1 is None:
+            #     G1 = G
+            # else:
+            #     G1.update(G)
             _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
             G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
         
         with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
-            G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed)
+            G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_2)
+            # if G2 is None:
+            #     G2 = G
+            # else:
+            #     G2.update(G)
             _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
             G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
 
@@ -179,18 +201,32 @@ if __name__ == "__main__":
         E2 = list()
 
         # -- Use call counts as edge attributes --
+        G1_edge_attr = sp.sparse.csr_matrix(cosine_similarity(N1, N1))
+        G2_edge_attr = sp.sparse.csr_matrix(cosine_similarity(N2, N2))
         E1.append(G1_edge_attr)
         E2.append(G2_edge_attr)
 
         # Get initial similarity matrix
         H = cosine_similarity(N2, N1)
         H = (H - H.min()) / (H.max()-H.min())
-        H = H / np.sum(np.sum(H))
         
         if sim_matrix_prev is not None:
-            sim_matrix_prev = sim_matrix_prev / np.sum(np.sum(sim_matrix_prev))
-            H = learning_rate * sim_matrix_prev + (1-learning_rate) * H
+            
+            if sim_matrix_prev.size < H.size:
+                temp = sim_matrix_prev
+                sim_matrix_prev = np.zeros(H.shape)
+                sim_matrix_prev[:temp.shape[0], :temp.shape[1]] = temp
+                H = learning_rate * sim_matrix_prev + (1-learning_rate) * H
+            
+            elif sim_matrix_prev.size > H.size:
+                sim_matrix_prev = sim_matrix_prev[:H.shape[0], :H.shape[1]]
+                H = learning_rate * sim_matrix_prev + (1-learning_rate) * H
+            
+            else:
+                H = learning_rate * sim_matrix_prev + (1 - learning_rate) * H
+            
         
+        H = H / np.sum(np.sum(H))
         H = sp.sparse.coo_matrix(H)
         # H = get_prior_similarity(G1_nodes, G2_nodes)
 
@@ -216,7 +252,6 @@ if __name__ == "__main__":
         sim_matrix_prev = sim_matrix
 
         get_G1_label = lambda i: G1_nodes[i]
-        
 
     for i, row in enumerate(sim_matrix):
         top_matches = np.argsort(row)[::-1]
@@ -225,6 +260,8 @@ if __name__ == "__main__":
         G2_nodes = tuple(G2_nodes)
         print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
 
+    print("======")
+    print("Accuracy", accuracy(sim_matrix_prev))
     set_trace()
     
     # Plot as heatmap

@@ -10,7 +10,7 @@ from tqdm import tqdm
 # Logging Config
 logger = logging.getLogger()
 logger.disabled = True
-logging.basicConfig(format='[+] %(message)s', level=logging.INFO)
+logging.basicConfig(format='[+] %(message)s', level=logging.CRITICAL)
 
 # Silence SparseEfficiencyWarning
 import warnings
@@ -168,7 +168,8 @@ class FINAL(object):
         for i in range(self.maxiter):
             t2 = time.time()
             prev = s
-            M = q.multiply(s)
+            try:  M = q.multiply(s)
+            except:  set_trace()
             S = sp.coo_matrix((n2, n1))
             for l in range(L):
                 S = S + E2[l].multiply(A2).dot(M).dot(E1[l].multiply(A1)) # calculate the consistency part
@@ -176,7 +177,7 @@ class FINAL(object):
             s = (1 - alpha) * h + (alpha * q).multiply(S)  # add the prior part
             # Compute erroe
             diff = norm(np.nan_to_num(s-prev));
-            logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
+            logging.critical(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
             if diff < self.tol: # if converge
                 break
 
