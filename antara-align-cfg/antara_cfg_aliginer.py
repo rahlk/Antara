@@ -123,7 +123,7 @@ def accuracy(mat):
 
 if __name__ == "__main__":
     
-    learning_rate = 0.8
+    learning_rate = 0.9
 
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
@@ -133,11 +133,11 @@ if __name__ == "__main__":
     #  ----------------------------------------------------  #
     #  Run instrumented programs to get dynamic call graphs  #
     #  ----------------------------------------------------  #
-
+    np.random.seed(1729)
     seeds_to_use = np.random.randint(0, 500, size=2)
     sim_matrix_prev = None
 
-    for seed_1, seed_2 in tqdm(zip(seeds_to_use[:-1], seeds_to_use[1:]), desc=":: Computing CFG alignment... :"):
+    for _, (seed_1, seed_2) in tqdm(enumerate(zip(seeds_to_use[:-1], seeds_to_use[1:])), desc=":: Computing CFG alignment... :"):
         
         G1_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
         G2_bin_path = G1_bin_path
@@ -262,9 +262,9 @@ if __name__ == "__main__":
 
     print("======")
     print("Accuracy", accuracy(sim_matrix_prev))
-    set_trace()
     
     # Plot as heatmap
     _draw_heatmap(sim_matrix, save_name='readelf-objdump.pdf')
+    set_trace()
 
 
