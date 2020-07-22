@@ -125,7 +125,7 @@ def minmax_norm(x):
 
 if __name__ == "__main__":
     
-    learning_rate = 0.01
+    learning_rate = 0.99
 
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     #  Run instrumented programs to get dynamic call graphs  #
     #  ----------------------------------------------------  #
     np.random.seed(1729)
-    seeds_to_use = np.random.randint(0, 500, size=10)
+    seeds_to_use = np.random.randint(0, 500, size=2)
     sim_matrix_prev = None
 
     for i in tqdm(range(len(seeds_to_use) - 1), desc=":: Computing CFG alignment... :"):
@@ -147,20 +147,20 @@ if __name__ == "__main__":
         
         # Get call graphs of readelf
         with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
-            G = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
-            if G1 is None:
-                G1 = G
-            else:
-                G1.update(G)
+            G1 = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
+            # if G1 is None:
+            #     G1 = G
+            # else:
+            #     G1.update(G)
             _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
             G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
         
         with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
-            G = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_2)
-            if G2 is None:
-                G2 = G
-            else:
-                G2.update(G)
+            G2 = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_2)
+            # if G2 is None:
+            #     G2 = G
+            # else:
+            #     G2.update(G)
             _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
             G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
 
