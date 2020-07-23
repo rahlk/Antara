@@ -125,7 +125,7 @@ def minmax_norm(x):
 
 if __name__ == "__main__":
     
-    learning_rate = 0.99
+    learning_rate = 0.9
 
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
@@ -135,16 +135,16 @@ if __name__ == "__main__":
     #  ----------------------------------------------------  #
     #  Run instrumented programs to get dynamic call graphs  #
     #  ----------------------------------------------------  #
-    # np.random.seed(1729)
-    seeds_to_use = [1, 2]  # np.random.randint(0, 500, size=2)
+    np.random.seed(1729)
+    seeds_to_use = list(range(11))  # np.random.randint(0, 500, size=2)
     sim_matrix_prev = None
 
-    for i in tqdm(range(len(seeds_to_use) - 1), desc=":: Computing CFG alignment... :"):
+    # for i in tqdm(range(len(seeds_to_use) - 1), desc=":: Computing CFG alignment... :"):
+    for i in range(len(seeds_to_use) - 1):
         seed_1 = seeds_to_use[i]
         seed_2 = seeds_to_use[i+1]
-        G1_bin_path = Path(root.joinpath('projects/elf/binutils/bin/readelf'))
-        G2_bin_path = G1_bin_path
-        
+        G1_bin_path = Path(root.joinpath('projects/elf/binutils-2.32/bin/readelf'))
+        G2_bin_path = Path(root.joinpath('projects/elf/binutils-2.34/bin/readelf'))
         # Get call graphs of readelf
         with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
             G = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
         
         with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
-            G = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_2)
+            G = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
             if G2 is None:
                 G2 = G
             else:
@@ -228,7 +228,7 @@ if __name__ == "__main__":
             H = learning_rate * sim_matrix_prev + (1 - learning_rate) * H
             
         
-        # H = H / np.sum(np.sum(H))
+        H = H / np.sum(np.sum(H))
         H = sp.sparse.coo_matrix(H)
         # H = get_prior_similarity(G1_nodes, G2_nodes)
 
@@ -264,7 +264,7 @@ if __name__ == "__main__":
         print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
 
     print("======")
-    print("Accuracy", accuracy(sim_matrix_prev))
+    print("Final Accuracy", accuracy(sim_matrix_prev))
     
     # Plot as heatmap
     _draw_heatmap(sim_matrix, save_name='readelf-objdump.pdf')
