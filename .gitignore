@@ -44,8 +44,8 @@ projects/sources/*/**
 
 # VS Code
 .vscode
+.vscode/settings.json
 .vscode/*
-.vscode/*/**
 
 # export WS_ROOT=/workspace/secern/
 # export ELF_BIN=/workspace/secern/projects/elf/binutils/bin
