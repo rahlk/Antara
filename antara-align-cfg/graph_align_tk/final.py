@@ -174,7 +174,7 @@ class FINAL(object):
                 S = S + E2[l].multiply(A2).dot(M).dot(E1[l].multiply(A1)) # calculate the consistency part
 
             s = (1 - alpha) * h + (alpha * q).multiply(S)  # add the prior part
-            # Compute erroe
+            # Compute error
             diff = norm(np.nan_to_num(s-prev));
             logging.critical(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
             if diff < self.tol: # if converge
