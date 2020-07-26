@@ -9,3 +9,4 @@ graphviz
 pydotplus
 matplotlib
 scikit-learn
+tabulate

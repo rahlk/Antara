@@ -141,7 +141,6 @@ class CFGBuilder:
         nx.DiGraph
             The dynamic graph
         """
-        
         assert self.G, "Dynamic graph has not been built yet. Please call self.build_dynamic_call_graph first."
         return self.G 
 
@@ -153,7 +152,6 @@ class CFGBuilder:
         list
             The paths taken by the program as a list of nodes
         """
-
         return self.call_path 
 
     def build_dynamic_call_graph(self, seed_range, opt_flags="", prev_edges=None):

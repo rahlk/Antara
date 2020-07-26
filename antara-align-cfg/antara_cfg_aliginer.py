@@ -27,142 +27,142 @@ logging.basicConfig(format='[+] %(message)s', level=logging.INFO)
 root = Path(os.path.abspath(os.path.join(
     os.getcwd().split('antara')[0], 'antara')))
 
-
 py_path = root.joinpath('antara-align-cfg')
 if py_path not in sys.path:
     sys.path.append(py_path)
 
-def _draw_heatmap(sim_matrix, save_name="foo.pdf"):
-    """ Visualize similarity matrix as a heatmap
+np.random.seed(1729)
 
-    Parameters
-    ----------
-    sim_matrix: np.ndarray
-        Similarity matrix
-    save_name: str
-        Filename
-    """
-    w = 4
-    h = 3
-    d = 150
-    plt.figure(figsize=(w, h), dpi=d)
-    heatmap = plt.imshow(sim_matrix)
-    heatmap.set_cmap("hsv")
-    plt.colorbar()
-    plt.savefig(save_name, bbox_inches='tight')
 
-def _jw_distance(str1, str2):
-    """ Compute the edit distance between two strings
+class CFGAlign:
+    def __init__(self, learning_rate=0.1,
+                 decay=1,
+                 mini_batch_size=50,
+                 max_repeats=20,
+                 test_input_path=Path(root.joinpath('projects/elf/test_in/'))):
+        # Hyperparameters
+        self.learning_rate = learning_rate
+        self.decay = decay
+        self.mini_batch_size = mini_batch_size
+        self.max_repeats = max_repeats
+        self.test_input_path = test_input_path
+        # Auxiliary methods
+        self.sim_matrix_prev = None
+        self.G1_prev_call_path = None
+        self.G2_prev_call_path = None
 
-    Parameters
-    ----------
-    str1: string
-        First string
-    str2: string
-        Second string
-
-    Returns
-    -------
-    float
-        The edit distance
-    """
-    return jaro_winkler_similarity(str1, str2)
-
-def get_prior_similarity(G1_nodes, G2_nodes, dist="jw"):
-    """ Generate similarity matrix based on textual distance
-
-    Parameters
-    ----------
-    G1_nodes: tuple (size n1)
-        Nodes in G1. 
-    G2_nodes: tuple (size n2)
-        Nodes in G2.
-    dist: str (default="jw")
-        Which distance measure to use. Defaults to jw (jaro-winkler) distance.
-
-    Returns
-    -------
-    sp.sparse.coo_matrix
-        A (n2*n1) matrix of node similarities
-    """
-
-    if not isinstance(G1_nodes, tuple):
-        G1_nodes = tuple(G1_nodes)
+    def __enter__(self):
+        """ Clean up opertaions
+        """
+        # Undertake cleanup operations
+        if os.path.exists(".G1.model"):
+            os.remove(".G1.model")
+        if os.path.exists(".G2.model"):
+            os.remove(".G2.model")
         
-    if not isinstance(G2_nodes, tuple):
-        G2_nodes = tuple(G2_nodes)
+        return self
 
-    # Get Rank of the simililarity matrix
-    cols = len(G1_nodes)
-    rows = len(G2_nodes)
+    @staticmethod
+    def _draw_heatmap(sim_matrix, save_name="foo.pdf"):
+        """ Visualize similarity matrix as a heatmap
 
-    # Initialize with zeros
-    H = np.zeros((n2, n1))
+        Parameters
+        ----------
+        sim_matrix: np.ndarray
+            Similarity matrix
+        save_name: str
+            Filename
+        """
+        w = 4
+        h = 3
+        d = 150
+        plt.figure(figsize=(w, h), dpi=d)
+        heatmap = plt.imshow(sim_matrix)
+        heatmap.set_cmap("YlGn")
+        plt.colorbar()
+        plt.savefig(save_name, bbox_inches='tight')
 
-    # Populate with distance scores
-    for i in range(rows):
-        for j in range(cols):
-            H[i, j] = _jw_distance(G1_nodes[j], G2_nodes[i])
-    
-    # H = H / np.sum(np.sum(H))
-    H = sp.sparse.coo_matrix(H)
-    return H
+    @staticmethod
+    def accuracy(sim_matrix, G1_nodes, G2_nodes, K=10):
+        """ Measures the similarity matching accuracy.
 
-def accuracy(sim_matrix, G1_nodes, G2_nodes):
-    correct = 0
-    total = 0
-    for i, row in enumerate(sim_matrix):
-        top_matches = np.argsort(row)[::-1]
-        top_five = top_matches[:10]
-        G1_nodes = tuple(G1_nodes)
-        G2_nodes = tuple(G2_nodes)
-        if G2_nodes[i] in map(lambda i: G1_nodes[i], top_five):
-            correct += 1
-        total += 1
-    
-    return round((correct / total) * 100, 2) 
+        Parameters
+        ----------
+        G1_nodes, G2_nodes: nx.nodes (or something)
+            Nodes of graphs G1 and G2 respectively
+        K: int
+            The top-k values within which we need to find a match.
 
-def minmax_norm(x):
-    return (x - x.min())/(x.max() - x.min())
+        Returns
+        -------
+        float
+            The accuracy score
+        """
+        correct = 0
+        total = 0
+        for i, row in enumerate(sim_matrix):
+            top_matches = np.argsort(row)[::-1]
+            top_K = top_matches[:K]
+            G1_nodes = tuple(G1_nodes)
+            G2_nodes = tuple(G2_nodes)
+            if G2_nodes[i] in map(lambda i: G1_nodes[i], top_K):
+                correct += 1
+            total += 1
+        
+        return round((correct / total) * 100, 2) 
 
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
-def main():
-    # Hyperparameters
-    learning_rate = 0.1
-    learning_rate_decay = 1 
-    mini_batch_size = 50
-    max_repeats = 10
-    # Test inputs to parse
-    test_input_path = Path(root.joinpath('projects/elf/test_in/'))
-    np.random.seed(1729)
-    sim_matrix_prev = None
-    G1_prev_call_path = None
-    G2_prev_call_path = None
+    @staticmethod
+    def minmax_norm(x):
+        """ Return the min/max norm or a matrix/array
 
-    try:
-        for repeat in range(max_repeats):
-            seeds_to_use = np.random.randint(1000, 1100, size=mini_batch_size)
+        Parameters
+        ----------
+        x: np.array
+            The matrix
+        
+        Returns
+        -------
+        np.array:
+            The normalized matrix
+        """
+        return (x - x.min())/(x.max() - x.min())
+
+    def align_cfg(self):
+        """ Align the call graphs of two programs
+
+        Returns
+        -------
+        np.array
+            The similarity matrix.
+        """
+        sim_matrix_prev = self.sim_matrix_prev
+        G1_prev_call_path = self.G1_prev_call_path
+        G2_prev_call_path = self.G2_prev_call_path
+
+        for repeat in range(self.max_repeats):
             G1_bin_path = Path(root.joinpath('projects/elf/binutils-2.32/bin/readelf'))
             G2_bin_path = Path(root.joinpath('projects/elf/binutils-2.34/bin/readelf'))
             
-            # Get call graphs of readelf
-            with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
+            # Get call graphs of program version vi
+            with CFGBuilder(G1_bin_path, self.test_input_path, 'readelf') as G1_builder:
                 G1_builder = G1_builder.build_dynamic_call_graph(
-                    prev_edges=G1_prev_call_path, opt_flags='--all', seed_range=list(range(repeat, repeat + mini_batch_size + 1)))
+                    prev_edges=G1_prev_call_path, opt_flags='--all', seed_range=list(range(repeat, repeat + self.mini_batch_size + 1)))
                 G1 = G1_builder.get_dynamic_call_graph()
                 G1_prev_call_path = G1_builder.get_call_path()
                 _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
                 G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
             
-            with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
+            # Get call graphs of program version vj
+            with CFGBuilder(G1_bin_path, self.test_input_path, 'readelf') as G2_builder:
                 G2_builder = G2_builder.build_dynamic_call_graph(
-                    prev_edges=G2_prev_call_path, opt_flags='--all', seed_range=list(range(repeat, repeat + mini_batch_size + 1)))
+                    prev_edges=G2_prev_call_path, opt_flags='--all', seed_range=list(range(repeat, repeat + self.mini_batch_size + 1)))
                 G2 = G2_builder.get_dynamic_call_graph()
                 G2_prev_call_path = G2_builder.get_call_path()
                 _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
                 G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
 
 
+            # ----------------------------- #
             # Align call graphs using FINAL #
             # ----------------------------- #
 
@@ -199,18 +199,18 @@ def main():
                     temp = sim_matrix_prev
                     sim_matrix_prev = np.zeros(H.shape)
                     sim_matrix_prev[:temp.shape[0], :temp.shape[1]] = temp
-                    sim_matrix_prev = minmax_norm(sim_matrix_prev)
+                    sim_matrix_prev = self.G1_prev_call_path(sim_matrix_prev)
                 
                 elif sim_matrix_prev.size > H.size:
                     sim_matrix_prev = sim_matrix_prev[:H.shape[0], :H.shape[1]]
-                    sim_matrix_prev = minmax_norm(sim_matrix_prev)
+                    sim_matrix_prev = self.G1_prev_call_path(sim_matrix_prev)
                 
-                H = learning_rate * sim_matrix_prev + (1 - learning_rate) * H
-                learning_rate = learning_rate * ((1 + learning_rate_decay * repeat) ** -1)
+                H = self.learning_rate * sim_matrix_prev + (1 - self.learning_rate) * H
+                self.learning_rate = self.learning_rate * ((1 + self.decay * repeat) ** -1)
                 
             H = sp.sparse.coo_matrix(H)
 
-            final = FINAL(A1, A2, H, N1, N2, E1, E2, maxiter=1000, alpha=learning_rate,tol=1e-9)
+            final = FINAL(A1, A2, H, N1, N2, E1, E2, maxiter=1000, alpha=self.learning_rate,tol=1e-9)
             sim_matrix = final.main_proc().tocoo()
             
             # Convert to a numpy.ndarray
@@ -221,30 +221,40 @@ def main():
             hi = sim_matrix.max()
             sim_matrix = (sim_matrix - lo) / (hi - lo)
             sim_matrix_prev = sim_matrix
-            print("Accuracy", accuracy(sim_matrix, G1_nodes, G2_nodes))
+            print("Accuracy", self.accuracy(sim_matrix, G1_nodes, G2_nodes))
 
         for i, row in enumerate(sim_matrix):
             top_matches = np.argsort(row)[::-1]
             top_five = top_matches[:3]
             G1_nodes = tuple(G1_nodes)
             G2_nodes = tuple(G2_nodes)
-            print(G2_nodes[i], "-->",
-                  ", ".join(map(lambda i: G1_nodes[i], top_five)))
+            print(G2_nodes[i], "-->", ", ".join(map(lambda i: G1_nodes[i], top_five)))
 
         print("======")
-        print("Final Accuracy", accuracy(sim_matrix, G1_nodes, G2_nodes))
+        print("Final Accuracy", self.accuracy(sim_matrix, G1_nodes, G2_nodes))
         
         # Plot similarity heatmap
-        _draw_heatmap(sim_matrix, save_name='readelf-objdump.pdf')
+        self.accuracy(sim_matrix, save_name='readelf-objdump.pdf')
 
-    finally:    
-        # Undertake cleanup operations
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """ Undertake auxiliary file cleanup operations
+        """
         if os.path.exists(".G1.model"):
             os.remove(".G1.model")
         if os.path.exists(".G2.model"):
             os.remove(".G2.model")
 
 if __name__ == "__main__":
-    exit(main())
+    opt = {
+        "learning_rate": 0.1,
+        "decay": 1,
+        "mini_batch_size": 50,
+        "max_repeats": 20,
+        "test_input_path": Path(root.joinpath('projects/elf/test_in/'))
+    }
+    
+    with CFGAlign(**opt) as cfg_align:
+        cfg_align.align_cfg()
+    
 
 

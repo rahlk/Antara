@@ -16,8 +16,10 @@ from collections import defaultdict
 logger = logging.getLogger()
 logger.disabled = True
 
+np.random.seed(1729)
+
 class Walker:
-	def __init__(self, nx_G, is_directed=True, p=1, q=0.5):
+	def __init__(self, nx_G, is_directed=True, p=1, q=2):
 		self.G = nx_G
 		self.is_directed = is_directed
 		self.p = p

@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 # Logging Config
 logger = logging.getLogger()
-logger.disabled = False
+logger.disabled = True
 logging.basicConfig(format='[+] %(message)s', level=logging.CRITICAL)
 
 # Silence SparseEfficiencyWarning
@@ -17,6 +17,9 @@ import warnings
 from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
                           csr_matrix, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
 warnings.simplefilter('ignore', SparseEfficiencyWarning)
+
+# Set seed
+np.random.seed(1729)
 
 class FINAL(object):
     """ FINAL: Fast Attributed Network Alignment
@@ -176,7 +179,7 @@ class FINAL(object):
             s = (1 - alpha) * h + (alpha * q).multiply(S)  # add the prior part
             # Compute error
             diff = norm(np.nan_to_num(s-prev));
-            logging.critical(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
+            logging.info(' Iteration: {} | Time: {} sec/it | error = {}'.format(i, round(time.time()-t2, 2), 100*diff))
             if diff < self.tol: # if converge
                 break
 
