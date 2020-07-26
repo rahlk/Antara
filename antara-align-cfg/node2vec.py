@@ -10,14 +10,14 @@ import networkx as nx
 from tqdm import tqdm
 from pdb import set_trace
 import matplotlib.pyplot as plt
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, FastText
 from collections import defaultdict
 
 logger = logging.getLogger()
 logger.disabled = True
 
-class Graph():
-	def __init__(self, nx_G, is_directed=True, p=1, q=1):
+class Walker:
+	def __init__(self, nx_G, is_directed=True, p=1, q=0.5):
 		self.G = nx_G
 		self.is_directed = is_directed
 		self.p = p
@@ -25,11 +25,11 @@ class Graph():
 
 	@staticmethod
 	def alias_setup(probs):
-		'''
+		"""
 		Compute utility lists for non-uniform sampling from discrete distributions.
 		Refer to https://hips.seas.harvard.edu/blog/2013/03/03/the-alias-method-efficient-sampling-with-many-discrete-outcomes/
 		for details
-		'''
+		"""
 		K = len(probs)
 		q = np.zeros(K)
 		J = np.zeros(K, dtype=np.int)
@@ -58,9 +58,9 @@ class Graph():
 
 	@staticmethod
 	def alias_draw(J, q):
-		'''
+		"""
 		Draw sample from a non-uniform discrete distribution using alias sampling.
-		'''
+		"""
 		K = len(J)
 
 		kk = int(np.floor(np.random.rand() * K))
@@ -69,10 +69,42 @@ class Graph():
 		else:
 			return J[kk]
 
+	def _preprocess_transition_probs(self):
+		"""
+		Preprocessing of transition probabilities for guiding the random walks.
+		"""
+		G = self.G
+		is_directed = self.is_directed
+
+		alias_nodes = {}
+		for node in G.nodes():
+			unnormalized_probs = [G[node][nbr]['label']
+							for nbr in sorted(G.neighbors(node))]
+			norm_const = sum(unnormalized_probs)
+			normalized_probs = [
+						float(u_prob) / norm_const for u_prob in unnormalized_probs]
+			alias_nodes[node] = self.alias_setup(normalized_probs)
+
+		alias_edges = {}
+		triads = {}
+
+		if is_directed:
+			for edge in G.edges():
+				alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
+		else:
+			for edge in G.edges():
+				alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
+				alias_edges[(edge[1], edge[0])] = self.get_alias_edge(edge[1], edge[0])
+
+		self.alias_nodes = alias_nodes
+		self.alias_edges = alias_edges
+
+		return self
+
 	def node2vec_walk(self, walk_length, start_node):
-		'''
+		"""
 		Simulate a random walk starting from start node.
-		'''
+		"""
 		G = self.G
 		alias_nodes = self.alias_nodes
 		alias_edges = self.alias_edges
@@ -96,16 +128,15 @@ class Graph():
 
 		return walk
 
-	def simulate_walks(self, num_walks, walk_length):
-		'''
+	def simulate_walks_randomly(self, num_walks, walk_length):
+		"""
 		Repeatedly simulate random walks from each node.
-		'''
+		"""
 		G = self.G
 		walks = []
 		nodes = list(G.nodes())
-		# print('Walk iteration:')
+		self._preprocess_transition_probs()
 		for walk_iter in range(num_walks):
-			# print(str(walk_iter+1), '/', str(num_walks))
 			random.shuffle(nodes)
 			for node in nodes:
 				walks.append(self.node2vec_walk(walk_length=walk_length, start_node=node))
@@ -113,9 +144,9 @@ class Graph():
 		return walks
 
 	def get_alias_edge(self, src, dst):
-		'''
+		"""
 		Get the alias edge setup lists for a given edge.
-		'''
+		"""
 		G = self.G
 		p = self.p
 		q = self.q
@@ -134,45 +165,18 @@ class Graph():
 
 		return self.alias_setup(normalized_probs)
 
-	def preprocess_transition_probs(self):
-		'''
-		Preprocessing of transition probabilities for guiding the random walks.
-		'''
-		G = self.G
-		is_directed = self.is_directed
 
-		alias_nodes = {}
-		for node in G.nodes():
-			unnormalized_probs = [G[node][nbr]['label'] for nbr in sorted(G.neighbors(node))]
-			norm_const = sum(unnormalized_probs)
-			normalized_probs = [
-						float(u_prob) / norm_const for u_prob in unnormalized_probs]
-			alias_nodes[node] = self.alias_setup(normalized_probs)
-
-		alias_edges = {}
-		triads = {}
-
-		if is_directed:
-			for edge in G.edges():
-				alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
-		else:
-			for edge in G.edges():
-				alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
-				alias_edges[(edge[1], edge[0])] = self.get_alias_edge(edge[1], edge[0])
-
-		self.alias_nodes = alias_nodes
-		self.alias_edges = alias_edges
-
-		return self
-
-
-def node2vec(G):
+def node_embedding(G, embedding_name, normed=False):
 	""" Get node embedding with node2vec
 
 	Paramters
 	---------
 	G: nx.DiGraph
 		Input graph
+	embedding_name:
+		Name of the persisted embedding model.
+	normed: bool (default: False)
+		Normalize embeddings or don't.
 	
 	Returns
 	-------
@@ -188,13 +192,19 @@ def node2vec(G):
 		node_label_map[str_node] = str(int_node)
 
 	
-	G = Graph(int_G, is_directed=True)
-	G = G.preprocess_transition_probs()
-	walks = G.simulate_walks(num_walks=64, walk_length=16)
+	walker = Walker(int_G, is_directed=True)
+	walks = walker.simulate_walks_randomly(num_walks=1024, walk_length=1024)
 	walks = [list(map(str, walk)) for walk in walks]
-	model = Word2Vec(walks, size=128, window=64,
-                  min_count=0, sg=1, workers=32, iter=128)
-	
+
+	model = Word2Vec(size=128, window=64, min_count=0, sg=1, workers=10, iter=128)
+	try: model.build_vocab(walks)
+	except: set_trace()
+	if not os.path.exists(embedding_name):
+		model.train(walks, epochs=model.epochs, total_examples=model.corpus_count)
+	else:
+		model = Word2Vec.load(embedding_name)
+		model.train(walks, epochs=model.epochs, total_examples=model.corpus_count)
+
 	embeddings = []
 	for node in orig_G.nodes():
 		key = node_label_map[node]
@@ -202,4 +212,8 @@ def node2vec(G):
 		embeddings.append(vector)
 
 	embeddings = np.array(embeddings)
+	
+	if normed == True:
+		embeddings /= np.linalg.norm(embeddings)
+	
 	return embeddings

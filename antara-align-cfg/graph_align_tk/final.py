@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 # Logging Config
 logger = logging.getLogger()
-logger.disabled = True
+logger.disabled = False
 logging.basicConfig(format='[+] %(message)s', level=logging.CRITICAL)
 
 # Silence SparseEfficiencyWarning
@@ -54,7 +54,7 @@ class FINAL(object):
         x in A2 is aligned to node-y in A1
 
     Reference
-    ---------
+    -------``
     [1] Zhang, Si, and Hanghang Tong. "FINAL: Fast Attributed Network Alignment." Proceedings of the 22nd ACM SIGKDD 
         International Conference on Knowledge Discovery and Data Mining. ACM, 2016.
     """
@@ -156,8 +156,8 @@ class FINAL(object):
                                 , E2[l].multiply(A2).dot(N2[:,k])).reshape((-1,1)))
 
         D = N.multiply(d)
-        DD = D.power(2)
-        DD = D.power(-0.25)
+        D = np.abs(D)  # Discard negative values so the sqrt is determinable. 
+        DD = D.power(-.5)
         DD[D == 0] = 0  # define inf to 0
         
         # fixed-point solution

@@ -8,8 +8,9 @@ import pandas as pd
 import networkx as nx
 from tqdm import tqdm
 from pdb import set_trace
-from node2vec import node2vec
+import node2vec as n2v
 import matplotlib.pyplot as plt
+import deterministic_deepwalk as ddw
 from nltk.metrics.distance import jaro_winkler_similarity
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -46,7 +47,7 @@ def _draw_heatmap(sim_matrix, save_name="foo.pdf"):
     d = 150
     plt.figure(figsize=(w, h), dpi=d)
     heatmap = plt.imshow(sim_matrix)
-    heatmap.set_cmap("YlGn")
+    heatmap.set_cmap("hsv")
     plt.colorbar()
     plt.savefig(save_name, bbox_inches='tight')
 
@@ -107,167 +108,143 @@ def get_prior_similarity(G1_nodes, G2_nodes, dist="jw"):
     H = sp.sparse.coo_matrix(H)
     return H
 
-def accuracy(mat):
+def accuracy(sim_matrix, G1_nodes, G2_nodes):
     correct = 0
     total = 0
-    for i, row in enumerate(mat):
-        top_match = np.argsort(row)[::-1]
-        correct += 1 if i in top_match[:10] else 0
+    for i, row in enumerate(sim_matrix):
+        top_matches = np.argsort(row)[::-1]
+        top_five = top_matches[:10]
+        G1_nodes = tuple(G1_nodes)
+        G2_nodes = tuple(G2_nodes)
+        if G2_nodes[i] in map(lambda i: G1_nodes[i], top_five):
+            correct += 1
         total += 1
     
-    return round((correct / total) * 100, 3) 
+    return round((correct / total) * 100, 2) 
 
 def minmax_norm(x):
     return (x - x.min())/(x.max() - x.min())
 
-# ============================================================================ #
-
-
-if __name__ == "__main__":
-    
-    learning_rate = 0.9
-
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+def main():
+    # Hyperparameters
+    learning_rate = 0.1
+    learning_rate_decay = 1 
+    mini_batch_size = 50
+    max_repeats = 10
     # Test inputs to parse
     test_input_path = Path(root.joinpath('projects/elf/test_in/'))
-    G1 = None
-    G2 = None
-
-    #  ----------------------------------------------------  #
-    #  Run instrumented programs to get dynamic call graphs  #
-    #  ----------------------------------------------------  #
     np.random.seed(1729)
-    seeds_to_use = list(range(11))  # np.random.randint(0, 500, size=2)
     sim_matrix_prev = None
+    G1_prev_call_path = None
+    G2_prev_call_path = None
 
-    # for i in tqdm(range(len(seeds_to_use) - 1), desc=":: Computing CFG alignment... :"):
-    for i in range(len(seeds_to_use) - 1):
-        seed_1 = seeds_to_use[i]
-        seed_2 = seeds_to_use[i+1]
-        G1_bin_path = Path(root.joinpath('projects/elf/binutils-2.32/bin/readelf'))
-        G2_bin_path = Path(root.joinpath('projects/elf/binutils-2.34/bin/readelf'))
-        # Get call graphs of readelf
-        with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
-            G = G1_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
-            if G1 is None:
-                G1 = G
-            else:
-                G1.update(G)
-            _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
-            G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
-        
-        with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
-            G = G2_builder.get_dynamic_call_graph(opt_flags='--all', seed_id=seed_1)
-            if G2 is None:
-                G2 = G
-            else:
-                G2.update(G)
-            _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
-            G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
-
-        # # Get call graphs of objdump
-        # G2_bin_path = Path(root.joinpath('projects/elf/binutils/bin/objdump'))
-        # with CFGBuilder(G2_bin_path, test_input_path, 'objdump') as G2_builder:
-        #     G2 = G2_builder.get_dynamic_call_graph(opt_flags='-s', seed_range=seeds_to_use)
-        #     G2_builder.draw_call_graph(G2, fname="objdump.dot")
-        #     _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
-        #     G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
-        
-        
-        # ----------------------------- #
-        # Align call graphs using FINAL #
-        # ----------------------------- #
-
-        # Get adjacency matrices
-        A1 = G1_adj
-        A2 = G2_adj
-
-        # Get the vertex counts
-        n1 = A1.shape[0]
-        n2 = A2.shape[0]
-        
-        # # Get node attribute matrix. We initialize with ones. 
-        # N1 = np.ones((n1, 1))
-        # N2 = np.ones((n2, 1))
-
-        # Get node attribute matrix. We initialize with deepwalk. 
-        # with Deepwalk(G1) as dw:
-        #     N1 = dw.get_node_embeddings()
-        
-        # with Deepwalk(G2) as dw:
-        #     N2 = dw.get_node_embeddings()
-        
-        N1 = node2vec(G1)
-        N2 = node2vec(G2)
-
-        # Get edge attribute matrix
-        E1 = list()
-        E2 = list()
-
-        # -- Use call counts as edge attributes --
-        G1_edge_attr = sp.sparse.csr_matrix(cosine_similarity(N1, N1))
-        G2_edge_attr = sp.sparse.csr_matrix(cosine_similarity(N2, N2))
-        E1.append(G1_edge_attr)
-        E2.append(G2_edge_attr)
-
-        # Get initial similarity matrix
-        H = cosine_similarity(N2, N1)
-        H = (H - H.min()) / (H.max()-H.min())
-        
-        if sim_matrix_prev is not None:
+    try:
+        for repeat in range(max_repeats):
+            seeds_to_use = np.random.randint(1000, 1100, size=mini_batch_size)
+            G1_bin_path = Path(root.joinpath('projects/elf/binutils-2.32/bin/readelf'))
+            G2_bin_path = Path(root.joinpath('projects/elf/binutils-2.34/bin/readelf'))
             
-            if sim_matrix_prev.size < H.size:
-                temp = sim_matrix_prev
-                sim_matrix_prev = np.zeros(H.shape)
-                sim_matrix_prev[:temp.shape[0], :temp.shape[1]] = temp
-                sim_matrix_prev = minmax_norm(sim_matrix_prev)
+            # Get call graphs of readelf
+            with CFGBuilder(G1_bin_path, test_input_path, 'readelf') as G1_builder:
+                G1_builder = G1_builder.build_dynamic_call_graph(
+                    prev_edges=G1_prev_call_path, opt_flags='--all', seed_range=list(range(repeat, repeat + mini_batch_size + 1)))
+                G1 = G1_builder.get_dynamic_call_graph()
+                G1_prev_call_path = G1_builder.get_call_path()
+                _, G1_adj = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
+                G1_nodes, G1_edge_attr = G1_builder.graph_to_adjacency_matrix(G1, use_weights=False)
             
-            elif sim_matrix_prev.size > H.size:
-                sim_matrix_prev = sim_matrix_prev[:H.shape[0], :H.shape[1]]
-                sim_matrix_prev = minmax_norm(sim_matrix_prev)
+            with CFGBuilder(G2_bin_path, test_input_path, 'readelf') as G2_builder:
+                G2_builder = G2_builder.build_dynamic_call_graph(
+                    prev_edges=G2_prev_call_path, opt_flags='--all', seed_range=list(range(repeat, repeat + mini_batch_size + 1)))
+                G2 = G2_builder.get_dynamic_call_graph()
+                G2_prev_call_path = G2_builder.get_call_path()
+                _, G2_adj = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
+                G2_nodes, G2_edge_attr = G2_builder.graph_to_adjacency_matrix(G2, use_weights=False)
+
+
+            # Align call graphs using FINAL #
+            # ----------------------------- #
+
+            # Get adjacency matrices
+            A1 = G1_adj
+            A2 = G2_adj
+
+            # Get the vertex counts
+            n1 = A1.shape[0]
+            n2 = A2.shape[0]
             
-            H = learning_rate * sim_matrix_prev + (1 - learning_rate) * H
+            # Get node attribute matrix. We initialize with a custom deepwalk. 
+            N1 = n2v.node_embedding(G1, embedding_name=".G1.model")
+            N2 = n2v.node_embedding(G2, embedding_name=".G2.model")
+
+            # Get edge attribute matrix
+            E1 = list()
+            E2 = list()
+
+            # -- Use edge similarity which is the cosine similarity masked with the edge weights --  
+            # -- TODO: Can we use a sophiticated similarity measure here? (thought vector maybe) -- 
+            G1_edge_attr *= sp.sparse.csr_matrix(cosine_similarity(N1, N1))
+            G2_edge_attr *= sp.sparse.csr_matrix(cosine_similarity(N2, N2))
+            E1.append(G1_edge_attr)
+            E2.append(G2_edge_attr)
+
+            # Get initial similarity estimate
+            H = cosine_similarity(N2, N1)
+            H = (H - H.min()) / (H.max()-H.min())
             
-        
-        H = H / np.sum(np.sum(H))
-        H = sp.sparse.coo_matrix(H)
-        # H = get_prior_similarity(G1_nodes, G2_nodes)
+            if sim_matrix_prev is not None:
+                
+                if sim_matrix_prev.size < H.size:
+                    temp = sim_matrix_prev
+                    sim_matrix_prev = np.zeros(H.shape)
+                    sim_matrix_prev[:temp.shape[0], :temp.shape[1]] = temp
+                    sim_matrix_prev = minmax_norm(sim_matrix_prev)
+                
+                elif sim_matrix_prev.size > H.size:
+                    sim_matrix_prev = sim_matrix_prev[:H.shape[0], :H.shape[1]]
+                    sim_matrix_prev = minmax_norm(sim_matrix_prev)
+                
+                H = learning_rate * sim_matrix_prev + (1 - learning_rate) * H
+                learning_rate = learning_rate * ((1 + learning_rate_decay * repeat) ** -1)
+                
+            H = sp.sparse.coo_matrix(H)
 
-        # H = np.identity(n1)
-        final = FINAL(A1, A2, H, N1, N2, E1, E2, maxiter=1000, tol=1e-9)
-        sim_matrix = final.main_proc().tocoo()
-        
-        if n1 == sim_matrix.shape[1]:
-            row_labels = G1_nodes
-            col_labels = G2_nodes
-        else:
-            col_labels = G1_nodes
-            row_labels = G2_nodes
-        
-        # Convert to a numpy.ndarray
-        sim_matrix = sim_matrix.A
-        # TODO: Why are there NaN's?
-        sim_matrix = np.nan_to_num(sim_matrix)
-        # Normalize weights using min/max normalization
-        lo = sim_matrix.min()
-        hi = sim_matrix.max()
-        sim_matrix = (sim_matrix - lo) / (hi - lo)
-        sim_matrix_prev = sim_matrix
-        print("Accuracy", accuracy(sim_matrix_prev))
-    
-    get_G1_label = lambda i: G1_nodes[i]
+            final = FINAL(A1, A2, H, N1, N2, E1, E2, maxiter=1000, alpha=learning_rate,tol=1e-9)
+            sim_matrix = final.main_proc().tocoo()
+            
+            # Convert to a numpy.ndarray
+            sim_matrix = sim_matrix.A
 
-    for i, row in enumerate(sim_matrix):
-        top_matches = np.argsort(row)[::-1]
-        top_five = top_matches[:3]
-        G1_nodes = tuple(G1_nodes)
-        G2_nodes = tuple(G2_nodes)
-        print(G2_nodes[i], "-->", ", ".join(map(get_G1_label, top_five)))
+            # Normalize weights using min/max normalization
+            lo = sim_matrix.min()
+            hi = sim_matrix.max()
+            sim_matrix = (sim_matrix - lo) / (hi - lo)
+            sim_matrix_prev = sim_matrix
+            print("Accuracy", accuracy(sim_matrix, G1_nodes, G2_nodes))
 
-    print("======")
-    print("Final Accuracy", accuracy(sim_matrix_prev))
-    
-    # Plot as heatmap
-    _draw_heatmap(sim_matrix, save_name='readelf-objdump.pdf')
-    set_trace()
+        for i, row in enumerate(sim_matrix):
+            top_matches = np.argsort(row)[::-1]
+            top_five = top_matches[:3]
+            G1_nodes = tuple(G1_nodes)
+            G2_nodes = tuple(G2_nodes)
+            print(G2_nodes[i], "-->",
+                  ", ".join(map(lambda i: G1_nodes[i], top_five)))
+
+        print("======")
+        print("Final Accuracy", accuracy(sim_matrix, G1_nodes, G2_nodes))
+        
+        # Plot similarity heatmap
+        _draw_heatmap(sim_matrix, save_name='readelf-objdump.pdf')
+
+    finally:    
+        # Undertake cleanup operations
+        if os.path.exists(".G1.model"):
+            os.remove(".G1.model")
+        if os.path.exists(".G2.model"):
+            os.remove(".G2.model")
+
+if __name__ == "__main__":
+    exit(main())
 
 

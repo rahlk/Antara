@@ -133,7 +133,6 @@ bool AFLCoverage::runOnModule(Module &M) {
             BasicBlock::iterator insert_pt_above = builder.GetInsertPoint();
             builder.SetInsertPoint(&B, insert_pt_above);
             Value *called_strPointer = builder.CreateGlobalStringPtr(calledName);
-            errs() << callerName << "  " << calledName << '\n';
             Value* args[] = {caller_strPointer, called_strPointer};
             builder.CreateCall(logCallGraphEdge, args);
           }

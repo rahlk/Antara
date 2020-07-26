@@ -28,9 +28,12 @@ class CFGBuilder:
         test_input_path: str (or pathlib.PosixPath)
             Directory containing the test_inputs 
         """
+        self.G = None
+        self.call_path = []
+        self.prj_name = project_name
         self.binary_path = binary_path
         self.test_input_path = test_input_path
-        self.prj_name = project_name
+        self.all_seeds = [seed for seed in test_input_path.glob("*")]
     
     def __enter__(self):
         """ Context manager initialization.
@@ -48,7 +51,13 @@ class CFGBuilder:
         fname: str
             File name to save as
         """
-        nx.drawing.nx_pydot.write_dot(G, fname)
+        try:
+            nx.drawing.nx_pydot.write_dot(G, ".tmp.dot")
+            subprocess.run(["dot", "-Tpdf", ".tmp.dot", "-o", fname],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        finally:
+            if os.path.exists(".tmp.dot"):
+                os.remove(".tmp.dot")
 
     @staticmethod
     def _calltrace_to_callgraph(trace_df):
@@ -97,7 +106,57 @@ class CFGBuilder:
 
         return node_list, adj_mtx
 
-    def get_dynamic_call_graph(self, opt_flags="", seed_id=0):
+    @staticmethod
+    def _compute_call_path(trace_df):
+        """ Convert call trace edge list to a set of paths 
+
+        Parameters
+        ----------
+        trace_df: pd.DataFrame
+            Edge list as a dataframe.
+
+        Returns
+        -------
+        list
+            A list of all takes paths
+        """
+
+        num_edges = len(trace_df)
+        path = [trace_df.iloc[0].source]
+        for i in range(1, num_edges):
+            prev_target = trace_df.iloc[i - 1].target
+            curr_source = trace_df.iloc[i].source
+            # If the path continues from the same node, 
+            # then consider it only once
+            if prev_target != curr_source:
+                path.append(prev_target)
+            path.append(curr_source)
+        return path
+
+    def get_dynamic_call_graph(self):
+        """ Getter method to return the call graph
+        
+        Returns
+        -------
+        nx.DiGraph
+            The dynamic graph
+        """
+        
+        assert self.G, "Dynamic graph has not been built yet. Please call self.build_dynamic_call_graph first."
+        return self.G 
+
+    def get_call_path(self):
+        """ Getter method to return the call path
+        
+        Returns
+        -------
+        list
+            The paths taken by the program as a list of nodes
+        """
+
+        return self.call_path 
+
+    def build_dynamic_call_graph(self, seed_range, opt_flags="", prev_edges=None):
         """ Runs a test input on the instrumented program to gather the dynamic 
             call graph.
 
@@ -120,7 +179,8 @@ class CFGBuilder:
         """
         binary_path = self.binary_path
         test_input_path = self.test_input_path
-        
+        all_seeds = self.all_seeds
+
         if isinstance(binary_path, str):
             binary_path = Path(binary_path)
         
@@ -130,25 +190,29 @@ class CFGBuilder:
         assert binary_path.exists(), "Binary path does not exist."
         assert test_input_path.exists(), "Test inputs path does not exist."
 
-        call_trace_df = pd.DataFrame(columns=['source', 'target'])
+        if prev_edges is None:
+            call_trace_df = pd.DataFrame(columns=['source', 'target'])
+        else:
+            call_trace_df = prev_edges
 
-        # Loop through the test files and run them on the binary. 
-        for input_num, test_input in enumerate(test_input_path.glob("*")):
-            if input_num != seed_id:
-                continue
-            else:
-                # Run the instrumented binary
-                subprocess.run([binary_path, opt_flags, test_input],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                # Convert the raw calltrace to a pandas dataframe
-                call_trace = pd.read_csv('callgraph.csv')
-                call_trace_df = call_trace_df.append(call_trace)
+        # Loop through the test files and run them on the binary.
+        for input_num in seed_range:
+            # Remove any previous instances of callgraph.csv
+            if os.path.exists("callgraph.csv"):
+                os.remove("callgraph.csv")
+            test_input = all_seeds[input_num]
+            # Run the instrumented binary
+            subprocess.run([binary_path, opt_flags, test_input],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # Convert the raw calltrace to a pandas dataframe
+            call_trace = pd.read_csv('callgraph.csv')
+            call_trace_df = call_trace_df.append(call_trace)
                     
-        
         # Convert the calltrace to a NetworkX graph
-        G = self._calltrace_to_callgraph(call_trace_df)
+        self.call_path = call_trace_df
+        self.G = self._calltrace_to_callgraph(call_trace_df)
 
-        return G
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """ Clean up opertaions
