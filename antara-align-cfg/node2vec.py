@@ -168,15 +168,13 @@ class Walker:
 		return self.alias_setup(normalized_probs)
 
 
-def node_embedding(G, embedding_name, normed=False):
+def node_embedding(G, normed=False):
 	""" Get node embedding with node2vec
 
 	Paramters
 	---------
 	G: nx.DiGraph
 		Input graph
-	embedding_name:
-		Name of the persisted embedding model.
 	normed: bool (default: False)
 		Normalize embeddings or don't.
 	
@@ -199,14 +197,9 @@ def node_embedding(G, embedding_name, normed=False):
 	walks = [list(map(str, walk)) for walk in walks]
 
 	model = Word2Vec(size=128, window=64, min_count=0, sg=1, workers=10, iter=128)
-	try: model.build_vocab(walks)
-	except: set_trace()
-	if not os.path.exists(embedding_name):
-		model.train(walks, epochs=model.epochs, total_examples=model.corpus_count)
-	else:
-		model = Word2Vec.load(embedding_name)
-		model.train(walks, epochs=model.epochs, total_examples=model.corpus_count)
-
+	model.build_vocab(walks)
+	model.train(walks, epochs=model.epochs, total_examples=model.corpus_count)
+	
 	embeddings = []
 	for node in orig_G.nodes():
 		key = node_label_map[node]

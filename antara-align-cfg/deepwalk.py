@@ -84,15 +84,9 @@ class Deepwalk:
                     index = int(contents[0])
                     embeddings[index] = list(map(float, contents[1:]))
         
-        # Preserve ordering
-        embedding_matrix = [] 
-        for node in self.G.nodes():
-            key = self.int_G.node_labels()
-            embedding_matrix.append(embeddings[key[node]])
-
         return embeddings
 
-    def get_node_embeddings(self):
+    def node_embedding(self):
         """
         Get node embedding by running deepwalk on CFG
 
@@ -112,9 +106,10 @@ class Deepwalk:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         out, err = proc.communicate()
         embeddings = self._get_embeddings()
-
+        
         # Convert to np.ndarray
-        embeddings = np.array(embeddings)
+        embedding_matrix = [embeddings[key] for key in sorted(embeddings.keys())]
+        embeddings = np.array(embedding_matrix)
         return embeddings
 
     def __exit__(self, exc_type, exc_val, exc_tb):
