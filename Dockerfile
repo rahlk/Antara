@@ -4,16 +4,6 @@ MAINTAINER helpacksi <oo.helpacksi@gmail.com>
 
 #----- Install packages -----
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    openssl 
-    libssl-dev  \
-    libcurl4-openssl-dev \
-    zlib1g-dev \
-    libpng-dev  \
-    libxml2-dev  \
-    libjson-c-dev  \
-    libbz2-dev  \
-    libpcre3-dev  \
-    ncurses-dev \
     xz-utils \
     vim \
     curl \
@@ -31,7 +21,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 RUN curl -LO http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 RUN bash Miniconda3-latest-Linux-x86_64.sh -p /opt/miniconda -b
 RUN rm Miniconda3-latest-Linux-x86_64.sh
-ENV PATH=/opt/miniconda/bin:${PATH}
+ENV PATH=${PATH}:/opt/miniconda/bin
 RUN conda update -y conda
 RUN conda install -c anaconda -y pip 
 
@@ -42,16 +32,35 @@ RUN curl -SL https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0
 
 #----- INSTALL PYTHON DEPENDENCIES-----
 RUN pip install setuptools && \
-    pip install numpy scipy && \
-    pandas networkx tqdm matplotlib && \
-    graphviz pydot scikit-learn && \
-    nltk deepwalk gensim pydotplus tabulate
+    pip install numpy scipy pandas networkx tqdm matplotlib graphviz pydot scikit-learn nltk deepwalk gensim pydotplus tabulate
 
-# ----- Get a reasonable .vimrc -----
-RUN wget -O /root/.vimrc  https://raw.githubusercontent.com/rahlk/Antara/docker/.vimrc.template
+# ----- This for debug only -----
+RUN wget -O ~/.vimrc https://gist.githubusercontent.com/rahlk/78d3d8f188a099dfd5114c35176e391d/raw/ed47d4fee79b5e177cb008abb319ebe4b542fc75/.vimrc
 
-#----- Get a reasonable .bashrc -----
-RUN wget -O /root/.bashrc https://raw.githubusercontent.com/rahlk/Antara/docker/.bashrc.template
+#----- Set environment variable -----
+RUN echo "export PATH=/opt/LLVM10/bin:$PATH" >> ~/.bashrc && \
+    echo "export LD_LIBRARY_PATH=/LLVM_ROOT/lib" >> ~/.bashrc && \
+    echo "export PYTHONDONTWRITEBYTECODE=1" >> ~/.bashrc && \
+    echo "export PYTHONIOENCODING=utf8" >> ~/.bashrc && \
+    echo "export PROJECT_ROOT=/workspace/antara" >> ~/.bashrc && \
+    echo "export COMPILER_ROOT=/workspace/antara/antara-clang-cc" >> ~/.bashrc && \
+    echo "export PROGRAMS_ROOT=/workspace/antara/programs" >> ~/.bashrc && \
+    echo "export GRAPH_ALIGN_ROOT=/workspace/antara/antara-align-cfg" >> ~/.bashrc && \
+    echo "export PS1='\[\033[38;5;9m\]\u\[$(tput sgr0)\]:$(tput sgr0)\]\[\033[38;5;214m\]\w\[$(tput sgr0)\\$ \[$(tput sgr0)\]'" >> ~/.bashrc && \
+    # Add some aliases to bashrc
+    echo "alias ..='cd ..'" > ~/.bashrc && \
+    echo "alias ...='cd ../..'" 
+# If there are multiple matches for completion, Tab should cycle through them
+bind 'TAB':menu-complete
+# Display a list of the matching files
+bind "set show-all-if-ambiguous on"
+# Perform partial completion on the first Tab press,
+# only start cycling full results on the second Tab press
+bind "set menu-complete-display-prefix on"
+# Cycle through history based on characters already typed on the line
+bind '"\e[A":history-search-backward'
+bind '"\e[B":history-search-forward'
+
 
 # ----- Update git credentials -----
 RUN git config --global user.name "helpacksi" && \
