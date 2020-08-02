@@ -97,15 +97,17 @@ fi
 #if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
 #    . /etc/bash_completion
 #fi
-export PATH=/opt/miniconda/bin:/opt/LLVM10/bin:/opt/miniconda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH=:/opt/LLVM10/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/miniconda/bin
 export LD_LIBRARY_PATH=/LLVM_ROOT/lib
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONIOENCODING=utf8
-export PROJECT_ROOT=/workspace/antara/
-export COMPILER_ROOT=/workspace/antara/antara-clang-cc/
-export PROGRAMS_ROOT=/workspace/antara/programs/
-export GRAPH_ALIGN_ROOT=/workspace/antara/antara-align-cfg/
-export PS1="\[\]\u\[$(tput sgr0)\]:$(tput sgr0)\]\[\]\w\[$(tput sgr0)\$ \[$(tput sgr0)\]"
+export PROJECT_ROOT=/workspace/antara
+export COMPILER_ROOT=/workspace/antara/antara-clang-cc
+export PROGRAMS_ROOT=/workspace/antara/programs
+export GRAPH_ALIGN_ROOT=/workspace/antara/antara-align-cfg
+export CC=/workspace/antara/antara-clang-cc/afl-clang-fast
+export CXX=/workspace/antara/antara-clang-cc/afl-clang-fast++
+
 # If there are multiple matches for completion, Tab should cycle through them
 bind 'TAB':menu-complete
 # Display a list of the matching files
