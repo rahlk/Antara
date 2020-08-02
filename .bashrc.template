@@ -1,4 +1,4 @@
- ~/.bashrc: executed by bash(1) for non-login shells.
+# ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
@@ -97,7 +97,7 @@ fi
 #if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
 #    . /etc/bash_completion
 #fi
-export PATH=:/opt/LLVM10/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/miniconda/bin
+export PATH=/opt/LLVM10/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/miniconda/bin
 export LD_LIBRARY_PATH=/LLVM_ROOT/lib
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONIOENCODING=utf8
