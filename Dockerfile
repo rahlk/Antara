@@ -38,7 +38,7 @@ RUN pip install setuptools && \
     nltk deepwalk gensim pydotplus tabulate
 
 # ----- Get a reasonable .vimrc -----
-RUN wget -O ~/.vimrc https://gist.githubusercontent.com/rahlk/78d3d8f188a099dfd5114c35176e391d/raw/ed47d4fee79b5e177cb008abb319ebe4b542fc75/.vimrc
+RUN wget -O /root/.vimrc  https://raw.githubusercontent.com/rahlk/Antara/docker/.vimrc.template
 
 #----- Get a reasonable .bashrc -----
 RUN wget -O /root/.bashrc https://raw.githubusercontent.com/rahlk/Antara/docker/.bashrc.template
