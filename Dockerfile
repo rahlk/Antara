@@ -4,6 +4,16 @@ MAINTAINER helpacksi <oo.helpacksi@gmail.com>
 
 #----- Install packages -----
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    openssl 
+    libssl-dev  \
+    libcurl4-openssl-dev \
+    zlib1g-dev \
+    libpng-dev  \
+    libxml2-dev  \
+    libjson-c-dev  \
+    libbz2-dev  \
+    libpcre3-dev  \
+    ncurses-dev \
     xz-utils \
     vim \
     curl \
